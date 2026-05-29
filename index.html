@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v6</title>
+<title>Hiro English Coach Stable v7</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -55,13 +55,18 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 .answerText{font-size:18px;font-weight:900;color:#f8fafc;margin-bottom:6px}
 .hintText{color:#a7b3c7;font-size:13px}
 
+
+.dataBox{min-height:140px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.toggleBody{display:block}
+.compactCard .meaning,.compactCard .example{display:none}
+
 @media(max-width:640px){.row{display:block}.metric{grid-template-columns:1fr 1fr 1fr}.cardRow{grid-template-columns:auto 1fr}}
 </style>
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v6</h1>
-<div class="sub">半自動版：貼付自動取込 → 見やすいカード → 答え非表示テスト</div>
+<h1>Hiro English Coach Stable v7</h1>
+<div class="sub">半自動版：データ移行対応 → カード管理改善 → WPM修正</div>
 </header>
 
 <div class="wrap">
@@ -186,6 +191,14 @@ Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて�
 <div id="savedPhrases"></div>
 </div>
 <div class="card">
+<h2>データ移行</h2>
+<p class="small">復習カードとWPM履歴をJSON形式で書き出し，別端末や更新後のアプリに取り込めます。</p>
+<div class="row"><button id="exportData" class="good">データを書き出し</button><button id="copyExportData" class="secondary">コピー</button></div>
+<textarea id="dataTransferBox" class="dataBox" placeholder="ここに書き出しデータが表示されます。取り込む場合はJSONを貼り付けてください。"></textarea>
+<div class="row"><button id="importData" class="good">データを取り込む</button><button id="clearTransferBox" class="secondary">欄をクリア</button></div>
+<div id="dataTransferStatus" class="out">未実行</div>
+</div>
+<div class="card">
 <h2>後日確認テスト</h2>
 <div class="row"><button id="makeSavedQuiz" class="good">選択カードでテスト</button><button id="makeRandomSavedQuiz" class="secondary">ランダム5問</button></div>
 <div id="savedQuiz"></div>
@@ -276,9 +289,87 @@ async function pasteFromClipboard(){
 }
 function extractSection(src,tag){var start=src.indexOf("["+tag+"]");if(start<0)return"";start+=tag.length+2;var rest=src.slice(start);var next=rest.search(/\n\[[A-Z_]+\]/);if(next>=0)rest=rest.slice(0,next);return rest.trim()}
 
-function parseLineItem(line){var raw=String(line||"").trim().replace(/^[-・*]\s*/,"").replace(/^\d+[.)]\s*/,"");if(!raw)return null;var parts=raw.split(/\s+-\s+|：|:|－|—/).map(function(x){return x.trim()}).filter(Boolean);return {id:Date.now()+"-"+Math.random().toString(36).slice(2),expression:parts[0]||raw,meaning:parts[1]||"",example:parts.slice(2).join(" - ")||"",correct:0,total:0,created:new Date().toISOString()}}
-function renderPhraseList(block){var lines=String(block||"").split(/\n/).map(function(x){return x.trim()}).filter(Boolean);currentPhraseItems=lines.map(parseLineItem).filter(Boolean);html("phrases",currentPhraseItems.map(function(p,i){return '<div class="itemCard"><b>'+(i+1)+'. '+esc(p.expression)+'</b><div class="jp">'+esc(p.meaning)+'</div>'+(p.example?'<div class="ex">例: '+esc(p.example)+'</div>':'')+'</div>'}).join(""))}
-function renderVocabList(block){var lines=String(block||"").split(/\n/).map(function(x){return x.trim()}).filter(Boolean);currentVocabItems=lines.map(parseLineItem).filter(Boolean);html("vocab",currentVocabItems.map(function(p,i){return '<div class="itemCard"><b>'+(i+1)+'. '+esc(p.expression)+'</b><div class="jp">'+esc(p.meaning||"日本語意味なし")+'</div>'+(p.example?'<div class="ex">例: '+esc(p.example)+'</div>':'')+'</div>'}).join(""))}
+
+function normalizeTextForWordCount(s){
+  return String(s||"")
+    .replace(/[’']/g,"'")
+    .replace(/[.,!?;:"“”()[\]{}<>]/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+function countEnglishWords(s){
+  var normalized = normalizeTextForWordCount(s);
+  if(!normalized) return 0;
+  var matches = normalized.match(/[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*/g);
+  return matches ? matches.length : 0;
+}
+
+function isNoiseLine(raw){
+  var s = String(raw||"").trim();
+  if(!s) return true;
+  if(/^\[?[A-Z_ ]+\]?$/.test(s)) return true;
+  if(/^(USEFUL\s*PHRASES|TOEIC\s*VOCABULARY|VOCABULARY|PHRASES|重要表現|語彙)$/i.test(s)) return true;
+  if(/^\d+[.)]\s*$/.test(s)) return true;
+  if(/^[-・*]\s*$/.test(s)) return true;
+  return false;
+}
+function parseLineItem(line){
+  var raw=String(line||"").trim();
+  raw=raw.replace(/^[-・*]\s*/,"").replace(/^\d+[.)]\s*/,"").trim();
+  if(isNoiseLine(raw))return null;
+  var parts=raw.split(/\s+-\s+|：|:|－|—/).map(function(x){return x.trim()}).filter(Boolean);
+  var expression=parts[0]||"";
+  var meaning=parts[1]||"";
+  var example=parts.slice(2).join(" - ")||"";
+
+  if(!meaning){
+    var m=raw.match(/^(.+?)\s*[（(](.+?)[）)]\s*(.*)$/);
+    if(m){expression=m[1].trim();meaning=m[2].trim();example=m[3].trim();}
+  }
+
+  if(!expression || expression.length<2)return null;
+  if(/^(例文|Example|Meaning|意味)\s*$/i.test(expression))return null;
+  if(!meaning && !example && expression.split(/\s+/).length<2 && !/[A-Za-z]/.test(expression))return null;
+
+  return {id:Date.now()+"-"+Math.random().toString(36).slice(2),expression:expression,meaning:meaning,example:example,correct:0,total:0,created:new Date().toISOString()}
+}
+
+function renderPhraseList(block){
+  var lines=String(block||"").split(/\n/).map(function(x){return x.trim()}).filter(Boolean);
+  currentPhraseItems=lines.map(parseLineItem).filter(Boolean).filter(function(p){
+    return p.expression && (p.meaning || p.example || p.expression.split(/\s+/).length>=2);
+  });
+  if(!currentPhraseItems.length){
+    html("phrases",'<div class="out">Useful Phrasesは検出されませんでした。</div>');
+    return;
+  }
+  html("phrases",currentPhraseItems.map(function(p,i){
+    return '<div class="studyCard">'
+      + '<div class="front">'+(i+1)+'. '+esc(p.expression)+'</div>'
+      + (p.meaning?'<div class="meaning"><b>和訳</b><br>'+esc(p.meaning)+'</div>':'')
+      + (p.example?'<div class="example"><b>例文</b><br>'+esc(p.example)+'</div>':'')
+      + '</div>';
+  }).join(""));
+}
+
+function renderVocabList(block){
+  var lines=String(block||"").split(/\n/).map(function(x){return x.trim()}).filter(Boolean);
+  currentVocabItems=lines.map(parseLineItem).filter(Boolean).filter(function(p){
+    return p.expression && (p.meaning || p.example);
+  });
+  if(!currentVocabItems.length){
+    html("vocab",'<div class="out">TOEIC Vocabularyは検出されませんでした。</div>');
+    return;
+  }
+  html("vocab",currentVocabItems.map(function(p,i){
+    return '<div class="studyCard">'
+      + '<div class="front">'+(i+1)+'. '+esc(p.expression)+'</div>'
+      + (p.meaning?'<div class="meaning"><b>和訳</b><br>'+esc(p.meaning)+'</div>':'')
+      + (p.example?'<div class="example"><b>例文</b><br>'+esc(p.example)+'</div>':'')
+      + '</div>';
+  }).join(""));
+}
 
 function renderShadowFromText(shadowText){var cleaned=String(shadowText||"").trim();if(!cleaned){text("shadowBlocks","");return}var lines=cleaned.split(/\n/).filter(function(x){return x.trim()});var englishLines=lines.filter(function(x){return !/^(Japanese|日本語|Tip|発音|意味)[:：]/i.test(x.trim())});var out="",buf=[];englishLines.forEach(function(line){buf.push(line);if(buf.length>=2){out+="Block "+(out.split("Block ").length)+"\n"+buf.join("\n")+"\n\n";buf=[]}});if(buf.length)out+="Block "+(out.split("Block ").length)+"\n"+buf.join("\n")+"\n\n";text("shadowBlocks",out||cleaned)}
 function importChatGPTResult(){
@@ -304,7 +395,18 @@ function updateTimerDisplay(){var sec=getTimerSeconds();text("timerDisplay",form
 function startTimer(){if(timerStart)return;timerStart=Date.now();timerInterval=setInterval(updateTimerDisplay,500);updateTimerDisplay();toast("WPMタイマーを開始しました")}
 function stopTimer(){if(timerStart){timerElapsed+=Math.floor((Date.now()-timerStart)/1000);timerStart=null}if(timerInterval){clearInterval(timerInterval);timerInterval=null}updateTimerDisplay()}
 function resetTimer(){timerStart=null;timerElapsed=0;if(timerInterval){clearInterval(timerInterval);timerInterval=null}updateTimerDisplay();toast("WPMタイマーをリセットしました")}
-function calcWpm(){var spoken=val("spoken"),sec=Number(val("seconds")||getTimerSeconds()||60),words=spoken.split(/\s+/).filter(Boolean).length,wpm=Math.round(words/sec*60),comment="";if(wpm<80)comment="ゆっくりでOK。まずは止まらず話すことを優先しましょう。";else if(wpm<110)comment="自然な練習ペースです。";else if(wpm<140)comment="かなり良いスピードです。";else comment="速いので，明瞭さも確認しましょう。";text("wpmOut","Words: "+words+"\nTime: "+sec+" sec\nWPM: "+wpm+"\nComment: "+comment);var d=getData();d.sessions.push({date:new Date().toISOString(),wpm:wpm,words:words,sec:sec,spoken:spoken});saveData(d);drawChart()}
+function calcWpm(){
+  var spoken=val("spoken");
+  var sec=Number(val("seconds")||getTimerSeconds()||60);
+  var words=countEnglishWords(spoken);
+  var wpm=Math.round(words/sec*60),comment="";
+  if(wpm<80)comment="ゆっくりでOK。まずは止まらず話すことを優先しましょう。";
+  else if(wpm<110)comment="自然な練習ペースです。";
+  else if(wpm<140)comment="かなり良いスピードです。";
+  else comment="速いので，明瞭さも確認しましょう。";
+  text("wpmOut","Words: "+words+"\nTime: "+sec+" sec\nWPM: "+wpm+"\nComment: "+comment);
+  var d=getData();d.sessions.push({date:new Date().toISOString(),wpm:wpm,words:words,sec:sec,spoken:spoken});saveData(d);drawChart()
+}
 
 function makeReview(){
   if(!currentPhraseItems.length){
@@ -314,13 +416,25 @@ function makeReview(){
   html("reviewCards",currentPhraseItems.map(function(p,i){
     return '<div class="studyCard">'
       + '<label><input type="checkbox" class="currentSelect" data-index="'+i+'">'
-      + '<div style="flex:1">'
-      + '<div class="front">'+(i+1)+'. '+esc(p.expression)+'</div>'
-      + '<div class="meaning"><b>和訳</b><br>'+esc(p.meaning||"")+'</div>'
+      + '<span class="front">'+(i+1)+'. '+esc(p.expression)+'</span></label>'
+      + '<button class="secondary toggleCard">詳細を表示/非表示</button>'
+      + '<div class="toggleBody">'
+      + (p.meaning?'<div class="meaning"><b>和訳</b><br>'+esc(p.meaning)+'</div>':'')
       + (p.example?'<div class="example"><b>例文</b><br>'+esc(p.example)+'</div>':'')
-      + '</div></label></div>';
+      + '</div></div>';
   }).join(""));
+  bindToggleCards();
 }
+
+function bindToggleCards(){
+  document.querySelectorAll(".toggleCard").forEach(function(b){
+    b.addEventListener("click",function(){
+      var body=b.nextElementSibling;
+      if(body) body.style.display = body.style.display==="none" ? "block" : "none";
+    });
+  });
+}
+
 function saveSelectedCurrentPhrases(){var selected=[].slice.call(document.querySelectorAll(".currentSelect:checked")).map(function(c){return currentPhraseItems[Number(c.dataset.index)]}).filter(Boolean);if(!selected.length){toast("蓄積するカードを選択してください");return}var d=getData();d.savedPhrases=d.savedPhrases||[];selected.forEach(function(p){d.savedPhrases.push(Object.assign({},p,{id:Date.now()+"-"+Math.random().toString(36).slice(2),correct:0,total:0,created:new Date().toISOString()}))});saveData(d);toast("選択したカードを蓄積しました");showTab("cards")}
 function renderSavedPhrases(){
   var items=getData().savedPhrases||[];
@@ -332,13 +446,16 @@ function renderSavedPhrases(){
     var rate=p.total?Math.round((p.correct||0)/p.total*100):0;
     return '<div class="studyCard">'
       + '<label><input type="checkbox" class="savedSelect" data-id="'+esc(p.id)+'">'
-      + '<div style="flex:1">'
-      + '<div class="front">'+esc(p.expression)+' <span class="badge">正答率 '+rate+'% ('+(p.correct||0)+'/'+(p.total||0)+')</span></div>'
-      + '<div class="meaning"><b>和訳</b><br>'+esc(p.meaning||"")+'</div>'
+      + '<span class="front">'+esc(p.expression)+' <span class="badge">正答率 '+rate+'% ('+(p.correct||0)+'/'+(p.total||0)+')</span></span></label>'
+      + '<button class="secondary toggleCard">詳細を表示/非表示</button>'
+      + '<div class="toggleBody">'
+      + (p.meaning?'<div class="meaning"><b>和訳</b><br>'+esc(p.meaning)+'</div>':'')
       + (p.example?'<div class="example"><b>例文</b><br>'+esc(p.example)+'</div>':'')
-      + '</div></label></div>';
+      + '</div></div>';
   }).join(""));
+  bindToggleCards();
 }
+
 function deleteSelectedCards(){var ids=[].slice.call(document.querySelectorAll(".savedSelect:checked")).map(function(c){return c.dataset.id});if(!ids.length){toast("削除するカードを選択してください");return}if(!confirm("選択したカードを削除しますか？"))return;var d=getData();d.savedPhrases=(d.savedPhrases||[]).filter(function(p){return ids.indexOf(p.id)<0});saveData(d);toast("選択カードを削除しました")}
 function setSavedSelection(flag){document.querySelectorAll(".savedSelect").forEach(function(c){c.checked=flag})}
 function setCurrentSelection(flag){document.querySelectorAll(".currentSelect").forEach(function(c){c.checked=flag})}
@@ -369,6 +486,51 @@ function makeQuizFromItems(items){
 function makeSavedQuiz(){makeQuizFromItems(selectedSavedItems())}
 function makeRandomSavedQuiz(){var items=(getData().savedPhrases||[]).slice().sort(function(){return Math.random()-0.5}).slice(0,5);makeQuizFromItems(items)}
 function markAnswer(id,ok){var d=getData();(d.savedPhrases||[]).forEach(function(p){if(p.id===id){p.total=(p.total||0)+1;if(ok)p.correct=(p.correct||0)+1}});saveData(d);toast(ok?"正解として記録しました":"不正解として記録しました")}
+
+function exportLearningData(){
+  var d=getData();
+  var payload={
+    version:"stable-v7",
+    exportedAt:new Date().toISOString(),
+    savedPhrases:d.savedPhrases||[],
+    sessions:d.sessions||[]
+  };
+  el("dataTransferBox").value=JSON.stringify(payload,null,2);
+  text("dataTransferStatus","書き出し完了。必要に応じてコピーして保存してください。");
+  toast("データを書き出しました");
+}
+
+function copyExportData(){
+  var t=val("dataTransferBox");
+  if(!t){exportLearningData();t=val("dataTransferBox")}
+  try{navigator.clipboard.writeText(t);toast("書き出しデータをコピーしました")}
+  catch(e){toast("コピーできない場合は手動で選択してください")}
+}
+
+function importLearningData(){
+  var raw=val("dataTransferBox");
+  if(!raw){toast("取り込むJSONデータを貼り付けてください");return}
+  try{
+    var payload=JSON.parse(raw);
+    var d=getData();
+    var incomingCards=payload.savedPhrases||[];
+    var incomingSessions=payload.sessions||[];
+    if(!Array.isArray(incomingCards) || !Array.isArray(incomingSessions))throw new Error("形式が違います");
+    d.savedPhrases=(d.savedPhrases||[]).concat(incomingCards.map(function(p){
+      if(!p.id)p.id=Date.now()+"-"+Math.random().toString(36).slice(2);
+      p.correct=p.correct||0;p.total=p.total||0;
+      return p;
+    }));
+    d.sessions=(d.sessions||[]).concat(incomingSessions);
+    saveData(d);
+    text("dataTransferStatus","取り込み完了：カード "+incomingCards.length+" 件，WPM履歴 "+incomingSessions.length+" 件");
+    toast("データを取り込みました");
+    renderSavedPhrases();drawChart();
+  }catch(e){
+    text("dataTransferStatus","取り込み失敗: "+e.message);
+    toast("取り込みに失敗しました");
+  }
+}
 
 function updateStats(){var sessions=getData().sessions||[],wpms=sessions.map(function(s){return s.wpm||0}).filter(Boolean),best=wpms.length?Math.max.apply(null,wpms):0,last=wpms.length?wpms[wpms.length-1]:0,avg=wpms.length?Math.round(wpms.reduce(function(a,b){return a+b},0)/wpms.length):0;text("totalSessions",sessions.length);text("bestWpm",best);text("lastWpm",last);text("avgWpm",avg);text("statBest",best);text("statLast",last)}
 function drawChart(){var c=el("chart");if(!c)return;var ctx=c.getContext("2d"),sessions=(getData().sessions||[]).slice(-10);ctx.clearRect(0,0,c.width,c.height);ctx.strokeStyle="#334155";ctx.beginPath();ctx.moveTo(45,20);ctx.lineTo(45,220);ctx.lineTo(860,220);ctx.stroke();if(!sessions.length)return;var max=Math.max(120,Math.max.apply(null,sessions.map(function(s){return s.wpm||0})));ctx.strokeStyle="#60a5fa";ctx.lineWidth=3;ctx.beginPath();sessions.forEach(function(s,i){var x=60+i*(780/Math.max(1,sessions.length-1)),y=220-(s.wpm/max)*180;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);ctx.fillStyle="#fff";ctx.fillText(String(s.wpm),x-8,y-8)});ctx.stroke()}
@@ -412,7 +574,7 @@ el("unselectAllSaved").addEventListener("click",function(){setSavedSelection(fal
 el("deleteSelectedCards").addEventListener("click",deleteSelectedCards);
 el("makeSavedQuiz").addEventListener("click",makeSavedQuiz);
 el("makeRandomSavedQuiz").addEventListener("click",makeRandomSavedQuiz);
-el("saveSettings").addEventListener("click",saveSettings);
+el("saveSettings").addEventListener("click",saveSettings);el("exportData").addEventListener("click",exportLearningData);el("copyExportData").addEventListener("click",copyExportData);el("importData").addEventListener("click",importLearningData);el("clearTransferBox").addEventListener("click",function(){el("dataTransferBox").value="";text("dataTransferStatus","クリアしました。")});
 el("clearData").addEventListener("click",function(){if(confirm("WPM履歴を削除しますか？")){var d=getData();d.sessions=[];saveData(d);drawChart()}});
 loadSaved();
 });
