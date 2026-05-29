@@ -1,7 +1,7 @@
 {
-  "name": "Hiro English Coach API",
+  "name": "Hiro English Coach Stable",
   "short_name": "English Coach",
-  "start_url": "./index.html?v=hotfix",
+  "start_url": "./index.html?v=stable",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
