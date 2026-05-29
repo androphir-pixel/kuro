@@ -1,7 +1,7 @@
 {
-  "name": "Hiro English Coach Stable v5",
+  "name": "Hiro English Coach Stable v6",
   "short_name": "English Coach",
-  "start_url": "./index.html?v=stable-v5",
+  "start_url": "./index.html?v=stable-v6",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",

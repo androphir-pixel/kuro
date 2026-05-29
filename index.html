@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v5</title>
+<title>Hiro English Coach Stable v6</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -43,13 +43,25 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 .cardRow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start}
 .badge{display:inline-block;border-radius:999px;padding:3px 8px;background:#1f2937;color:#dbeafe;font-size:12px;margin-left:4px}
 .highlightTitle{color:#bfdbfe}
+
+.studyCard{background:#0b1220;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.studyCard .front{font-size:18px;font-weight:900;color:#f8fafc;margin-bottom:8px}
+.studyCard .meaning{background:#10233f;border-left:4px solid #60a5fa;border-radius:8px;padding:8px;margin:6px 0;color:#dbeafe}
+.studyCard .example{background:#111827;border-radius:8px;padding:8px;margin-top:6px;color:#a7b3c7;font-size:13px}
+.studyCard label{display:flex;gap:8px;align-items:flex-start}
+.testCard{background:#0b1220;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.testQuestion{font-size:17px;font-weight:900;margin-bottom:8px}
+.answerBox{display:none;background:#10233f;border-left:4px solid #60a5fa;border-radius:8px;padding:10px;margin-top:10px}
+.answerText{font-size:18px;font-weight:900;color:#f8fafc;margin-bottom:6px}
+.hintText{color:#a7b3c7;font-size:13px}
+
 @media(max-width:640px){.row{display:block}.metric{grid-template-columns:1fr 1fr 1fr}.cardRow{grid-template-columns:auto 1fr}}
 </style>
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v5</h1>
-<div class="sub">半自動版：メモ → ChatGPT → 貼り戻し → 自動WPM → 復習カード管理</div>
+<h1>Hiro English Coach Stable v6</h1>
+<div class="sub">半自動版：貼付自動取込 → 見やすいカード → 答え非表示テスト</div>
 </header>
 
 <div class="wrap">
@@ -85,8 +97,8 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 
 <div class="card cardPaste">
 <h2 class="highlightTitle">ChatGPT結果の貼り戻し</h2>
-<p class="small">ショートカットやChatGPTで作成した回答をここに貼り付けてください。</p>
-<div class="row"><button class="good" id="pasteFromClipboard">クリップボード貼付</button><button class="secondary" id="clearResultBox">貼り戻し欄をクリア</button></div>
+<p class="small">ショートカットやChatGPTで作成した回答をここに貼り付けてください。貼り付け後は自動で取り込みを試みます。</p>
+<div class="row"><button class="good" id="pasteFromClipboard">クリップボード貼付＋自動取込</button><button class="secondary" id="clearResultBox">貼り戻し欄をクリア</button></div>
 <textarea id="chatgptResult" placeholder="ChatGPTの回答をここに貼り付けてください。"></textarea>
 <div class="row"><button class="good" id="importChatGPTResult">結果をアプリに取り込む</button><button class="secondary" id="clearChatGPTResult">クリア</button></div>
 <div id="importStatus" class="out">取り込むと，Script / Shadow / Conv. / Cards に反映されます。</div>
@@ -247,7 +259,21 @@ function makeAiPrompt(){
 }
 function copyAiPrompt(){var p=el("aiPromptBox").innerText||"";if(!p||p.indexOf("ここに")===0){makeAiPrompt();return}try{navigator.clipboard.writeText(p);toast("コピーしました")}catch(e){toast("手動でコピーしてください")}}
 function openChatGPT(){makeAiPrompt();toast("プロンプトをコピーしました。ChatGPTで貼り付けて送信してください。");setTimeout(function(){try{window.open("https://chatgpt.com/","_blank")}catch(e){location.href="https://chatgpt.com/"}},300)}
-async function pasteFromClipboard(){try{var t=await navigator.clipboard.readText();if(t){el("chatgptResult").value=t;toast("クリップボードから貼り付けました")}else toast("クリップボードが空です")}catch(e){toast("自動貼り付けできません。長押しで手動貼り付けしてください");el("chatgptResult").focus()}}
+async function pasteFromClipboard(){
+  try{
+    var t=await navigator.clipboard.readText();
+    if(t){
+      el("chatgptResult").value=t;
+      toast("クリップボードから貼り付けました。自動取り込みします。");
+      setTimeout(importChatGPTResult,200);
+    }else{
+      toast("クリップボードが空です");
+    }
+  }catch(e){
+    toast("自動貼付できません。入力欄を長押ししてペーストしてください。ペースト後は自動取り込みします。");
+    el("chatgptResult").focus();
+  }
+}
 function extractSection(src,tag){var start=src.indexOf("["+tag+"]");if(start<0)return"";start+=tag.length+2;var rest=src.slice(start);var next=rest.search(/\n\[[A-Z_]+\]/);if(next>=0)rest=rest.slice(0,next);return rest.trim()}
 
 function parseLineItem(line){var raw=String(line||"").trim().replace(/^[-・*]\s*/,"").replace(/^\d+[.)]\s*/,"");if(!raw)return null;var parts=raw.split(/\s+-\s+|：|:|－|—/).map(function(x){return x.trim()}).filter(Boolean);return {id:Date.now()+"-"+Math.random().toString(36).slice(2),expression:parts[0]||raw,meaning:parts[1]||"",example:parts.slice(2).join(" - ")||"",correct:0,total:0,created:new Date().toISOString()}}
@@ -280,14 +306,66 @@ function stopTimer(){if(timerStart){timerElapsed+=Math.floor((Date.now()-timerSt
 function resetTimer(){timerStart=null;timerElapsed=0;if(timerInterval){clearInterval(timerInterval);timerInterval=null}updateTimerDisplay();toast("WPMタイマーをリセットしました")}
 function calcWpm(){var spoken=val("spoken"),sec=Number(val("seconds")||getTimerSeconds()||60),words=spoken.split(/\s+/).filter(Boolean).length,wpm=Math.round(words/sec*60),comment="";if(wpm<80)comment="ゆっくりでOK。まずは止まらず話すことを優先しましょう。";else if(wpm<110)comment="自然な練習ペースです。";else if(wpm<140)comment="かなり良いスピードです。";else comment="速いので，明瞭さも確認しましょう。";text("wpmOut","Words: "+words+"\nTime: "+sec+" sec\nWPM: "+wpm+"\nComment: "+comment);var d=getData();d.sessions.push({date:new Date().toISOString(),wpm:wpm,words:words,sec:sec,spoken:spoken});saveData(d);drawChart()}
 
-function makeReview(){html("reviewCards",currentPhraseItems.map(function(p,i){return '<div class="itemCard cardRow"><input type="checkbox" class="currentSelect" data-index="'+i+'"><div><b>'+(i+1)+'. '+esc(p.expression)+'</b><div class="jp">'+esc(p.meaning)+'</div><div class="ex">'+esc(p.example||"")+'</div></div></div>'}).join("")||'<div class="out">Useful Phrasesを取り込んでください。</div>')}
+function makeReview(){
+  if(!currentPhraseItems.length){
+    html("reviewCards",'<div class="out">Useful Phrasesを取り込んでください。</div>');
+    return;
+  }
+  html("reviewCards",currentPhraseItems.map(function(p,i){
+    return '<div class="studyCard">'
+      + '<label><input type="checkbox" class="currentSelect" data-index="'+i+'">'
+      + '<div style="flex:1">'
+      + '<div class="front">'+(i+1)+'. '+esc(p.expression)+'</div>'
+      + '<div class="meaning"><b>和訳</b><br>'+esc(p.meaning||"")+'</div>'
+      + (p.example?'<div class="example"><b>例文</b><br>'+esc(p.example)+'</div>':'')
+      + '</div></label></div>';
+  }).join(""));
+}
 function saveSelectedCurrentPhrases(){var selected=[].slice.call(document.querySelectorAll(".currentSelect:checked")).map(function(c){return currentPhraseItems[Number(c.dataset.index)]}).filter(Boolean);if(!selected.length){toast("蓄積するカードを選択してください");return}var d=getData();d.savedPhrases=d.savedPhrases||[];selected.forEach(function(p){d.savedPhrases.push(Object.assign({},p,{id:Date.now()+"-"+Math.random().toString(36).slice(2),correct:0,total:0,created:new Date().toISOString()}))});saveData(d);toast("選択したカードを蓄積しました");showTab("cards")}
-function renderSavedPhrases(){var items=getData().savedPhrases||[];if(!items.length){html("savedPhrases",'<div class="out">まだ蓄積カードはありません。</div>');return}html("savedPhrases",items.map(function(p,i){var rate=p.total?Math.round((p.correct||0)/p.total*100):0;return '<div class="itemCard cardRow"><input type="checkbox" class="savedSelect" data-id="'+esc(p.id)+'"><div><b>'+esc(p.expression)+' <span class="badge">正答率 '+rate+'% ('+(p.correct||0)+'/'+(p.total||0)+')</span></b><div class="jp">'+esc(p.meaning)+'</div><div class="ex">'+esc(p.example||"")+'</div></div></div>'}).join(""))}
+function renderSavedPhrases(){
+  var items=getData().savedPhrases||[];
+  if(!items.length){
+    html("savedPhrases",'<div class="out">まだ蓄積カードはありません。</div>');
+    return;
+  }
+  html("savedPhrases",items.map(function(p,i){
+    var rate=p.total?Math.round((p.correct||0)/p.total*100):0;
+    return '<div class="studyCard">'
+      + '<label><input type="checkbox" class="savedSelect" data-id="'+esc(p.id)+'">'
+      + '<div style="flex:1">'
+      + '<div class="front">'+esc(p.expression)+' <span class="badge">正答率 '+rate+'% ('+(p.correct||0)+'/'+(p.total||0)+')</span></div>'
+      + '<div class="meaning"><b>和訳</b><br>'+esc(p.meaning||"")+'</div>'
+      + (p.example?'<div class="example"><b>例文</b><br>'+esc(p.example)+'</div>':'')
+      + '</div></label></div>';
+  }).join(""));
+}
 function deleteSelectedCards(){var ids=[].slice.call(document.querySelectorAll(".savedSelect:checked")).map(function(c){return c.dataset.id});if(!ids.length){toast("削除するカードを選択してください");return}if(!confirm("選択したカードを削除しますか？"))return;var d=getData();d.savedPhrases=(d.savedPhrases||[]).filter(function(p){return ids.indexOf(p.id)<0});saveData(d);toast("選択カードを削除しました")}
 function setSavedSelection(flag){document.querySelectorAll(".savedSelect").forEach(function(c){c.checked=flag})}
 function setCurrentSelection(flag){document.querySelectorAll(".currentSelect").forEach(function(c){c.checked=flag})}
 function selectedSavedItems(){var ids=[].slice.call(document.querySelectorAll(".savedSelect:checked")).map(function(c){return c.dataset.id});var items=getData().savedPhrases||[];return items.filter(function(p){return ids.length?ids.indexOf(p.id)>=0:false})}
-function makeQuizFromItems(items){if(!items.length){toast("テストするカードを選択してください");return}items=items.slice(0,10);html("savedQuiz",items.map(function(p,i){return '<div class="itemCard"><b>Q'+(i+1)+'. 「'+esc(p.meaning||p.expression)+'」を英語で？</b><button class="secondary showAnswer" data-id="'+esc(p.id)+'">答えを見る</button><div class="hiddenAnswer">A. '+esc(p.expression)+'<br>'+esc(p.example||"")+'<div class="row"><button class="good markCorrect" data-id="'+esc(p.id)+'">正解</button><button class="danger markWrong" data-id="'+esc(p.id)+'">不正解</button></div></div></div>'}).join(""));document.querySelectorAll(".showAnswer").forEach(function(b){b.addEventListener("click",function(){var a=b.nextElementSibling;a.style.display=a.style.display==="block"?"none":"block"})});document.querySelectorAll(".markCorrect").forEach(function(b){b.addEventListener("click",function(){markAnswer(b.dataset.id,true)})});document.querySelectorAll(".markWrong").forEach(function(b){b.addEventListener("click",function(){markAnswer(b.dataset.id,false)})})}
+function makeQuizFromItems(items){
+  if(!items.length){toast("テストするカードを選択してください");return}
+  items=items.slice(0,10);
+  html("savedQuiz",items.map(function(p,i){
+    return '<div class="testCard">'
+      + '<div class="testQuestion">Q'+(i+1)+'. 次の日本語を英語で言うと？</div>'
+      + '<div class="meaning">'+esc(p.meaning||"意味未登録")+'</div>'
+      + '<button class="secondary showAnswer" data-id="'+esc(p.id)+'">答えを見る</button>'
+      + '<div class="answerBox">'
+      + '<div class="answerText">'+esc(p.expression)+'</div>'
+      + (p.example?'<div class="hintText">例文: '+esc(p.example)+'</div>':'')
+      + '<div class="row"><button class="good markCorrect" data-id="'+esc(p.id)+'">正解</button><button class="danger markWrong" data-id="'+esc(p.id)+'">不正解</button></div>'
+      + '</div></div>';
+  }).join(""));
+  document.querySelectorAll(".showAnswer").forEach(function(b){
+    b.addEventListener("click",function(){
+      var a=b.nextElementSibling;
+      a.style.display=a.style.display==="block"?"none":"block";
+    })
+  });
+  document.querySelectorAll(".markCorrect").forEach(function(b){b.addEventListener("click",function(){markAnswer(b.dataset.id,true)})});
+  document.querySelectorAll(".markWrong").forEach(function(b){b.addEventListener("click",function(){markAnswer(b.dataset.id,false)})});
+}
 function makeSavedQuiz(){makeQuizFromItems(selectedSavedItems())}
 function makeRandomSavedQuiz(){var items=(getData().savedPhrases||[]).slice().sort(function(){return Math.random()-0.5}).slice(0,5);makeQuizFromItems(items)}
 function markAnswer(id,ok){var d=getData();(d.savedPhrases||[]).forEach(function(p){if(p.id===id){p.total=(p.total||0)+1;if(ok)p.correct=(p.correct||0)+1}});saveData(d);toast(ok?"正解として記録しました":"不正解として記録しました")}
@@ -305,7 +383,7 @@ el("makeAiPrompt").addEventListener("click",makeAiPrompt);
 el("copyAiPrompt").addEventListener("click",copyAiPrompt);
 el("openChatGPT").addEventListener("click",openChatGPT);
 el("clearAiPrompt").addEventListener("click",function(){text("aiPromptBox","ここにChatGPTへ貼るプロンプトが表示されます。")});
-el("pasteFromClipboard").addEventListener("click",pasteFromClipboard);
+el("pasteFromClipboard").addEventListener("click",pasteFromClipboard);el("chatgptResult").addEventListener("paste",function(){setTimeout(function(){if(val("chatgptResult").length>20){toast("貼り付けを検知しました。自動取り込みします。");importChatGPTResult();}},300)});
 el("clearResultBox").addEventListener("click",function(){el("chatgptResult").value=""});
 el("importChatGPTResult").addEventListener("click",importChatGPTResult);
 el("clearChatGPTResult").addEventListener("click",function(){el("chatgptResult").value="";text("importStatus","クリアしました。")});
