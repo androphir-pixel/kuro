@@ -1,67 +1,81 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0f172a">
-  <link rel="manifest" href="manifest.webmanifest">
-  <title>Hiro English Coach API</title>
-  <style>
-    :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--accent:#60a5fa;--good:#34d399;--warn:#fbbf24}
-    *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;background:linear-gradient(160deg,var(--bg),#020617);color:var(--ink)}
-    header{position:sticky;top:0;z-index:5;padding:17px 15px;background:rgba(15,23,42,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
-    .top,.wrap{max-width:1100px;margin:auto}.wrap{padding:15px 15px 90px}h1{font-size:21px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:4px}
-    .tabs{display:flex;gap:8px;overflow:auto;padding:10px 0;position:sticky;top:70px;background:rgba(15,23,42,.92);z-index:4}
-    .tab{white-space:nowrap;width:auto;border-radius:999px;border:1px solid var(--line);background:#111827;color:#cbd5e1;padding:10px 12px;font-weight:800}.tab.active{background:#2563eb;color:white}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}.card{background:rgba(24,34,53,.96);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 16px 40px rgba(0,0,0,.25)}
-    h2{font-size:18px;margin:0 0 12px}h3{font-size:15px;margin:14px 0 8px;color:#dbeafe}.small{font-size:12px;color:var(--muted);line-height:1.55}
-    input,textarea{width:100%;border-radius:14px;border:1px solid var(--line);background:#0b1220;color:var(--ink);padding:12px;font-size:16px}textarea{min-height:120px;resize:vertical}
-    button{border:0;border-radius:14px;padding:11px 13px;background:#2563eb;color:white;font-weight:800;font-size:14px;cursor:pointer}button.secondary{background:#263244;color:#e5e7eb;border:1px solid var(--line)}button.good{background:#059669}
-    .row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.screen{display:none}.screen.active{display:block}.out{white-space:pre-wrap;background:#0b1220;border:1px solid var(--line);border-radius:16px;padding:12px;min-height:76px;line-height:1.65}
-    .pill{display:inline-block;padding:7px 10px;border:1px solid var(--line);border-radius:999px;margin:4px;background:#0b1220;color:#dbeafe}.metric{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric div{background:#0b1220;border:1px solid var(--line);border-radius:16px;padding:12px;text-align:center}.metric b{display:block;font-size:22px}
-    canvas{width:100%;height:210px;background:#0b1220;border-radius:16px;border:1px solid var(--line)}.toast{position:fixed;left:16px;right:16px;bottom:18px;background:#052e2b;color:#d1fae5;border:1px solid #065f46;border-radius:16px;padding:12px;display:none;z-index:20}
-    @media(max-width:640px){.row{flex-direction:column}.row>*{width:100%}.tabs{top:68px}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hiro English Coach API</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+body{margin:0;background:#0f172a;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
+header{padding:18px 32px;border-bottom:1px solid #334155}
+h1{margin:0;font-size:22px}.sub{color:#a7b3c7;font-size:12px;margin-top:5px}
+.wrap{max-width:1100px;margin:auto;padding:16px}
+.tabs{display:flex;gap:8px;overflow:auto;background:#111827;padding:10px;margin-bottom:14px}
+.tab{border:1px solid #334155;border-radius:999px;background:#111827;color:#dbeafe;padding:10px 14px;font-weight:800;cursor:pointer}
+.tab.active{background:#2563eb;color:white}
+.screen{display:none}.screen.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+.card{background:#182235;border:1px solid #334155;border-radius:18px;padding:16px;margin-bottom:14px}
+input,textarea{width:100%;box-sizing:border-box;background:#0b1220;color:#f8fafc;border:1px solid #334155;border-radius:12px;padding:12px;font-size:16px}
+textarea{min-height:120px}
+button{border:0;border-radius:12px;background:#2563eb;color:white;padding:11px 14px;font-weight:800;cursor:pointer;margin-top:8px}
+button.secondary{background:#263244;border:1px solid #334155}.good{background:#059669}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.out{white-space:pre-wrap;background:#0b1220;border:1px solid #334155;border-radius:12px;padding:12px;min-height:70px;line-height:1.6}
+.pill{display:inline-block;border:1px solid #334155;border-radius:999px;padding:7px 10px;margin:4px;background:#0b1220;color:#dbeafe}
+.metric{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric div{background:#0b1220;border:1px solid #334155;border-radius:12px;text-align:center;padding:12px}.metric b{display:block;font-size:22px}
+canvas{width:100%;height:210px;background:#0b1220;border:1px solid #334155;border-radius:12px}
+.toast{position:fixed;left:16px;right:16px;bottom:18px;background:#052e2b;color:#d1fae5;border:1px solid #065f46;border-radius:14px;padding:12px;display:none}
+.small{font-size:12px;color:#a7b3c7}
+@media(max-width:640px){.row{display:block}}
+</style>
 </head>
 <body>
-<header><div class="top"><h1>Hiro English Coach API</h1><div class="sub">テーマ入力 → ChatGPT APIで教材生成 → 音声練習 → WPM記録</div></div></header>
+<header><h1>Hiro English Coach API</h1><div class="sub">テーマ入力 → ChatGPT APIで教材生成 → 音声練習 → WPM記録</div></header>
 <div class="wrap">
-  <nav class="tabs"><button class="tab active" onclick="show('home',this)">Home</button><button class="tab" onclick="show('lesson',this)">Lesson</button><button class="tab" onclick="show('voice',this)">Voice</button><button class="tab" onclick="show('review',this)">Review</button><button class="tab" onclick="show('stats',this)">Stats</button><button class="tab" onclick="show('settings',this)">Settings</button></nav>
-  <section id="home" class="screen active"><div class="grid"><div class="card"><h2>今日のテーマ</h2><input id="topic" placeholder="例：おすすめの旅行先，イヤホンのレビュー，仕事の課題"><h3>日本語メモ</h3><textarea id="memo" placeholder="話したい内容を日本語で入力，または音声入力してください。"></textarea><div class="row"><button onclick="dictate('memo','ja-JP')">🎙 日本語で話す</button><button class="secondary" onclick="stopDictation()">停止</button></div><button class="good" onclick="generateLesson()">AIで教材生成</button><p class="small">Worker URLをSettingsで設定してから使ってください。</p></div><div class="card"><h2>学習状況</h2><div class="metric"><div><b id="totalSessions">0</b><span>Sessions</span></div><div><b id="bestWpm">0</b><span>Best WPM</span></div><div><b id="lastWpm">0</b><span>Last WPM</span></div></div><h3>状態</h3><div id="status" class="out">準備OK</div></div></div></section>
-  <section id="lesson" class="screen"><div class="card"><h2>AI生成教材</h2><div class="row"><button onclick="generateLesson()">再生成</button><button class="secondary" onclick="speakById('script')">🔊 スクリプト読み上げ</button></div><h3>1分スクリプト</h3><textarea id="script"></textarea><h3>日本語訳</h3><div id="translation" class="out"></div><h3>重要表現</h3><div id="phrases"></div><h3>TOEIC語彙</h3><div id="vocab"></div></div></section>
-  <section id="voice" class="screen"><div class="grid"><div class="card"><h2>シャドーイング</h2><button onclick="buildShadowing()">分割表示</button><button class="secondary" onclick="speakById('shadowing')">🔊 読み上げ</button><div id="shadowing" class="out"></div></div><div class="card"><h2>英会話練習</h2><div id="questions" class="out"></div><h3>自分の英語</h3><textarea id="spoken" placeholder="英語で話す，または入力してください。"></textarea><div class="row"><button onclick="dictate('spoken','en-US')">🎙 英語で話す</button><button class="secondary" onclick="stopDictation()">停止</button></div><div class="row"><input id="seconds" type="number" value="60" min="1"><button onclick="calcWpm()">WPM計測</button></div><button class="good" onclick="generateFeedback()">AI添削</button><div id="wpmOut" class="out"></div></div></div></section>
-  <section id="review" class="screen"><div class="grid"><div class="card"><h2>AIフィードバック</h2><div id="feedback" class="out"></div></div><div class="card"><h2>復習クイズ</h2><div id="quiz" class="out"></div></div></div></section>
-  <section id="stats" class="screen"><div class="card"><h2>WPM履歴</h2><canvas id="chart" width="900" height="260"></canvas><button class="secondary" onclick="clearData()">履歴削除</button></div></section>
-  <section id="settings" class="screen"><div class="card"><h2>設定</h2><label class="small">Cloudflare Worker URL</label><input id="workerUrl" placeholder="例：https://hiro-english-coach-api.xxxxx.workers.dev"><label class="small">読み上げ速度</label><input id="rate" type="range" min="0.6" max="1.2" step="0.05" value="0.86"><button onclick="saveSettings()">保存</button><p class="small">APIキーはここに入れません。APIキーはCloudflare WorkerのSecretに保存します。</p></div></section>
+<nav class="tabs">
+<button class="tab active" data-target="home">Home</button><button class="tab" data-target="lesson">Lesson</button><button class="tab" data-target="voice">Voice</button><button class="tab" data-target="review">Review</button><button class="tab" data-target="stats">Stats</button><button class="tab" data-target="settings">Settings</button>
+</nav>
+
+<section id="home" class="screen active"><div class="grid"><div class="card"><h2>今日のテーマ</h2><input id="topic" placeholder="例：おすすめの旅行先，イヤホンのレビュー，仕事の課題"><h3>日本語メモ</h3><textarea id="memo" placeholder="話したい内容を日本語で入力，または音声入力してください。"></textarea><div class="row"><button id="jaVoice">🎙 日本語で話す</button><button class="secondary" id="stopVoice1">停止</button></div><button class="good" id="generateLesson">AIで教材生成</button><p class="small">Worker URLをSettingsで設定してから使ってください。</p></div><div class="card"><h2>学習状況</h2><div class="metric"><div><b id="totalSessions">0</b><span>Sessions</span></div><div><b id="bestWpm">0</b><span>Best WPM</span></div><div><b id="lastWpm">0</b><span>Last WPM</span></div></div><h3>状態</h3><div id="status" class="out">準備OK</div></div></div></section>
+
+<section id="lesson" class="screen"><div class="card"><h2>AI生成教材</h2><div class="row"><button id="regenLesson">再生成</button><button class="secondary" id="speakScript">🔊 スクリプト読み上げ</button></div><h3>1分スクリプト</h3><textarea id="script"></textarea><h3>日本語訳</h3><div id="translation" class="out"></div><h3>重要表現</h3><div id="phrases"></div><h3>TOEIC語彙</h3><div id="vocab"></div></div></section>
+
+<section id="voice" class="screen"><div class="grid"><div class="card"><h2>シャドーイング</h2><button id="buildShadowing">分割表示</button><button class="secondary" id="speakShadowing">🔊 読み上げ</button><div id="shadowing" class="out"></div></div><div class="card"><h2>英会話練習</h2><div id="questions" class="out"></div><h3>自分の英語</h3><textarea id="spoken"></textarea><div class="row"><button id="enVoice">🎙 英語で話す</button><button class="secondary" id="stopVoice2">停止</button></div><div class="row"><input id="seconds" type="number" value="60" min="1"><button id="calcWpm">WPM計測</button></div><button class="good" id="generateFeedback">AI添削</button><div id="wpmOut" class="out"></div></div></div></section>
+
+<section id="review" class="screen"><div class="grid"><div class="card"><h2>AIフィードバック</h2><div id="feedback" class="out"></div></div><div class="card"><h2>復習クイズ</h2><div id="quiz" class="out"></div></div></div></section>
+
+<section id="stats" class="screen"><div class="card"><h2>WPM履歴</h2><canvas id="chart" width="900" height="260"></canvas><button class="secondary" id="clearData">履歴削除</button></div></section>
+
+<section id="settings" class="screen"><div class="card"><h2>設定</h2><label class="small">Cloudflare Worker URL</label><input id="workerUrl" placeholder="例：https://hiro-english-coach-api.xxxxx.workers.dev"><label class="small">読み上げ速度</label><input id="rate" type="range" min="0.6" max="1.2" step="0.05" value="0.86"><button id="saveSettings">保存</button><p class="small">APIキーはここに入れません。APIキーはCloudflare WorkerのSecretに保存します。</p></div></section>
 </div><div id="toast" class="toast"></div>
+
 <script>
-const storeKey="hiroEnglishCoach.api.v1";let recognition=null;
-function data(){return JSON.parse(localStorage.getItem(storeKey)||'{"sessions":[],"lesson":{},"settings":{}}')}
-function save(d){localStorage.setItem(storeKey,JSON.stringify(d));updateStats()}function v(id){return document.getElementById(id).value.trim()}function setText(id,t){document.getElementById(id).innerText=t||""}
-function toast(t){const x=document.getElementById("toast");x.innerText=t;x.style.display="block";setTimeout(()=>x.style.display="none",2400)}
-function show(id,btn){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));btn.classList.add("active");if(id==="stats")drawChart()}
-function workerUrl(){return (data().settings.workerUrl||"").replace(/\/$/,"")}function saveSettings(){const d=data();d.settings.workerUrl=v("workerUrl");d.settings.rate=v("rate");save(d);toast("設定を保存しました")}function loadSettings(){const d=data();document.getElementById("workerUrl").value=d.settings.workerUrl||"";document.getElementById("rate").value=d.settings.rate||0.86}
-async function callApi(action,payload){const url=workerUrl();if(!url){toast("SettingsでWorker URLを設定してください");throw new Error("No Worker URL")}setText("status","AI処理中...");const res=await fetch(url+"/api/"+action,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});if(!res.ok){const e=await res.text();throw new Error(e)}const json=await res.json();setText("status","完了");return json}
-async function generateLesson(){try{const json=await callApi("lesson",{topic:v("topic"),memo:v("memo")});const d=data();d.lesson=json;save(d);renderLesson(json);show("lesson",document.querySelectorAll(".tab")[1]);toast("教材を生成しました")}catch(e){setText("status","エラー: "+e.message);toast("生成に失敗しました")}}
-function renderLesson(j){document.getElementById("script").value=j.script||"";setText("translation",j.translation||"");document.getElementById("phrases").innerHTML=(j.phrases||[]).map(p=>`<span class="pill" onclick="alert('${esc(p.meaning||"")}')">${esc(p.expression||p)}</span>`).join("");document.getElementById("vocab").innerHTML=(j.vocabulary||[]).map(p=>`<span class="pill" onclick="alert('${esc((p.meaning||"")+" "+(p.example||""))}')">${esc(p.word||p)}</span>`).join("");setText("questions",(j.conversation_questions||[]).map((q,i)=>`${i+1}. ${q}`).join("
-"));setText("quiz",(j.quiz||[]).map((q,i)=>`${i+1}. ${q}`).join("
-"))}
-function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function buildShadowing(){const s=v("script");if(!s){toast("スクリプトがありません");return}const parts=s.split(/(?<=[.!?])\s+/).filter(Boolean);let out="";for(let i=0;i<parts.length;i+=3){out+=`Block ${i/3+1}
-${parts.slice(i,i+3).join(" ")}
-
-Tip: Keep the rhythm. Do not stop.
-
-`}setText("shadowing",out)}
-function speakById(id){const el=document.getElementById(id);const text=(el.value||el.innerText||"").trim();if(!text)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=Number(document.getElementById("rate").value||0.86);speechSynthesis.speak(u)}
-function dictate(id,lang){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("このブラウザは音声認識に対応していません。iPhoneではキーボードのマイクも使えます。");return}stopDictation();const target=document.getElementById(id);let base=target.value?target.value+" ":"";recognition=new SR();recognition.lang=lang;recognition.continuous=true;recognition.interimResults=true;recognition.onresult=e=>{let f="",interim="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)f+=t+" ";else interim+=t}if(f)base+=f;target.value=base+interim};recognition.onerror=e=>toast("音声入力エラー: "+e.error);recognition.onend=()=>recognition=null;recognition.start();toast("音声入力開始")}
-function stopDictation(){if(recognition){recognition.stop();recognition=null;toast("音声入力停止")}}
-function calcWpm(){const text=v("spoken"),sec=Number(v("seconds")||60),words=text.split(/\s+/).filter(Boolean).length,wpm=Math.round(words/sec*60);setText("wpmOut",`Words: ${words}
-Time: ${sec} sec
-WPM: ${wpm}`);const d=data();d.sessions.push({date:new Date().toISOString(),words,sec,wpm,spoken:text});save(d);drawChart()}
-async function generateFeedback(){try{const json=await callApi("feedback",{script:v("script"),spoken:v("spoken")});setText("feedback",json.feedback||JSON.stringify(json,null,2));show("review",document.querySelectorAll(".tab")[3]);toast("添削しました")}catch(e){toast("添削に失敗しました");setText("feedback","エラー: "+e.message)}}
-function updateStats(){const ss=data().sessions||[];document.getElementById("totalSessions").innerText=ss.length;document.getElementById("bestWpm").innerText=ss.length?Math.max(...ss.map(s=>s.wpm||0)):0;document.getElementById("lastWpm").innerText=ss.length?ss[ss.length-1].wpm:0}
-function drawChart(){const c=document.getElementById("chart"),ctx=c.getContext("2d"),ss=(data().sessions||[]).slice(-12);ctx.clearRect(0,0,c.width,c.height);ctx.strokeStyle="#334155";ctx.beginPath();ctx.moveTo(48,20);ctx.lineTo(48,220);ctx.lineTo(860,220);ctx.stroke();if(!ss.length)return;const max=Math.max(120,...ss.map(s=>s.wpm||0));ctx.strokeStyle="#60a5fa";ctx.lineWidth=3;ctx.beginPath();ss.forEach((s,i)=>{const x=60+i*(780/Math.max(1,ss.length-1));const y=220-(s.wpm/max)*180;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);ctx.fillStyle="#f8fafc";ctx.fillText(s.wpm,x-10,y-10)});ctx.stroke()}
-function clearData(){if(confirm("履歴を削除しますか？")){localStorage.removeItem(storeKey);loadSettings();updateStats();drawChart()}}
-if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}loadSettings();updateStats();renderLesson(data().lesson||{});drawChart();
-</script></body></html>
+(function(){
+const key="hiroEnglishCoach.api.hotfix.v1";let rec=null;
+const $=id=>document.getElementById(id), val=id=>($(id).value||"").trim(), txt=(id,t)=>$(id).innerText=t||"";
+const data=()=>JSON.parse(localStorage.getItem(key)||'{"sessions":[],"lesson":{},"settings":{}}');
+const save=d=>{localStorage.setItem(key,JSON.stringify(d));stats()};
+function toast(t){const x=$("toast");x.innerText=t;x.style.display="block";setTimeout(()=>x.style.display="none",2200)}
+function tab(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));$(id).classList.add("active");document.querySelector('.tab[data-target="'+id+'"]').classList.add("active");if(id==="stats")draw()}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>tab(b.dataset.target));
+function load(){const d=data();$("workerUrl").value=d.settings.workerUrl||"";$("rate").value=d.settings.rate||0.86;render(d.lesson||{});stats();draw()}
+function saveSettings(){const d=data();d.settings.workerUrl=val("workerUrl").replace(/\/$/,"");d.settings.rate=val("rate");save(d);toast("設定を保存しました")}
+async function api(action,payload){const url=(data().settings.workerUrl||"").replace(/\/$/,"");if(!url){toast("SettingsでWorker URLを設定してください");throw Error("No Worker URL")}txt("status","AI処理中...");const r=await fetch(url+"/api/"+action,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});if(!r.ok)throw Error(await r.text());txt("status","完了");return await r.json()}
+async function lesson(){try{const j=await api("lesson",{topic:val("topic"),memo:val("memo")});const d=data();d.lesson=j;save(d);render(j);tab("lesson");toast("教材を生成しました")}catch(e){txt("status","エラー: "+e.message);toast("生成に失敗しました")}}
+function render(j){$("script").value=j.script||"";txt("translation",j.translation||"");$("phrases").innerHTML=(j.phrases||[]).map(p=>'<span class="pill">'+(p.expression||p)+'</span>').join("");$("vocab").innerHTML=(j.vocabulary||[]).map(p=>'<span class="pill">'+(p.word||p)+'</span>').join("");txt("questions",(j.conversation_questions||[]).map((q,i)=>(i+1)+". "+q).join("\n"));txt("quiz",(j.quiz||[]).map((q,i)=>(i+1)+". "+q).join("\n"))}
+function shadow(){const s=val("script");if(!s){toast("スクリプトがありません");return}const parts=s.replace(/\n+/g," ").split(". ");let out="";for(let i=0;i<parts.length;i+=3){out+="Block "+(Math.floor(i/3)+1)+"\n"+parts.slice(i,i+3).join(". ")+"\n\nTip: Keep the rhythm.\n\n"}txt("shadowing",out)}
+function speak(t){if(!t.trim())return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=Number($("rate").value||0.86);speechSynthesis.speak(u)}
+function dictate(id,lang){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("このブラウザは音声認識に対応していません。");return}stop();const target=$(id);let base=target.value?target.value+" ":"";rec=new SR();rec.lang=lang;rec.continuous=true;rec.interimResults=true;rec.onresult=e=>{let f="",m="";for(let i=e.resultIndex;i<e.results.length;i++){let t=e.results[i][0].transcript;if(e.results[i].isFinal)f+=t+" ";else m+=t}if(f)base+=f;target.value=base+m};rec.start();toast("音声入力開始")}
+function stop(){if(rec){rec.stop();rec=null;toast("音声入力停止")}}
+function wpm(){const words=val("spoken").split(/\s+/).filter(Boolean).length, sec=Number(val("seconds")||60), w=Math.round(words/sec*60);txt("wpmOut","Words: "+words+"\nTime: "+sec+" sec\nWPM: "+w);const d=data();d.sessions.push({date:new Date().toISOString(),wpm:w,words:words,sec:sec});save(d);draw()}
+async function feedback(){try{const j=await api("feedback",{script:val("script"),spoken:val("spoken")});txt("feedback",j.feedback||JSON.stringify(j,null,2));tab("review");toast("添削しました")}catch(e){txt("feedback","エラー: "+e.message)}}
+function stats(){const s=data().sessions||[];$("totalSessions").innerText=s.length;$("bestWpm").innerText=s.length?Math.max(...s.map(x=>x.wpm||0)):0;$("lastWpm").innerText=s.length?s[s.length-1].wpm:0}
+function draw(){const c=$("chart"),ctx=c.getContext("2d"),s=(data().sessions||[]).slice(-12);ctx.clearRect(0,0,c.width,c.height);ctx.strokeStyle="#334155";ctx.beginPath();ctx.moveTo(48,20);ctx.lineTo(48,220);ctx.lineTo(860,220);ctx.stroke();if(!s.length)return;const max=Math.max(120,...s.map(x=>x.wpm||0));ctx.strokeStyle="#60a5fa";ctx.lineWidth=3;ctx.beginPath();s.forEach((x,i)=>{let px=60+i*(780/Math.max(1,s.length-1)),py=220-(x.wpm/max)*180;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);ctx.fillStyle="#fff";ctx.fillText(x.wpm,px-10,py-10)});ctx.stroke()}
+$("saveSettings").onclick=saveSettings;$("generateLesson").onclick=lesson;$("regenLesson").onclick=lesson;$("jaVoice").onclick=()=>dictate("memo","ja-JP");$("enVoice").onclick=()=>dictate("spoken","en-US");$("stopVoice1").onclick=stop;$("stopVoice2").onclick=stop;$("speakScript").onclick=()=>speak(val("script"));$("buildShadowing").onclick=shadow;$("speakShadowing").onclick=()=>speak($("shadowing").innerText);$("calcWpm").onclick=wpm;$("generateFeedback").onclick=feedback;$("clearData").onclick=()=>{if(confirm("履歴を削除しますか？")){localStorage.removeItem(key);load()}};
+if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{})}
+load();
+})();
+</script>
+</body>
+</html>
