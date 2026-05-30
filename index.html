@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v26 Recovery</title>
+<title>Hiro English Coach Stable v28 Recovery</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -299,8 +299,8 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v26 Recovery</h1>
-<div class="sub">Recovery版：取り込み関数互換修正 → Script反映復旧</div>
+<h1>Hiro English Coach Stable v28 Recovery</h1>
+<div class="sub">Recovery版：音声入力・Shadow・Conv基盤関数復旧</div>
 </header>
 
 <div class="wrap">
@@ -588,6 +588,24 @@ async function pasteFromClipboard(){
 }
 
 
+
+// v27 compatibility guards
+function isNoiseLine(line){
+  var s=String(line||"").trim();
+  if(!s)return true;
+  if(/^[-ー―—–_=\s]+$/.test(s))return true;
+  if(/^\[[A-Z_]+\]$/.test(s))return true;
+  if(/^(Japanese|Tip|POINT|Point|日本語|コツ|ポイント)[:：]/i.test(s))return true;
+  return false;
+}
+
+function isEnglishLine(line){
+  var s=String(line||"").trim();
+  if(isNoiseLine(s))return false;
+  if(/[ぁ-んァ-ヶ一-龠]/.test(s))return false;
+  return /[A-Za-z]/.test(s);
+}
+
 function importChatGPTResult(){
   var src=val("chatgptResult");
   if(!src || !src.trim()){
@@ -595,19 +613,22 @@ function importChatGPTResult(){
     return;
   }
 
-  var refined=extractSection(src,"JAPANESE_REFINED");
-  var script=extractSection(src,"ENGLISH_SCRIPT");
-  var translation=extractSection(src,"JAPANESE_TRANSLATION");
-  var phrases=extractSection(src,"USEFUL_PHRASES");
-  var vocab=extractSection(src,"TOEIC_VOCABULARY");
-  var questions=extractSection(src,"CONVERSATION_QUESTIONS");
-  var quiz=extractSection(src,"MINI_QUIZ");
+  var refined="",script="",translation="",phrases="",vocab="",questions="",quiz="";
+  try{
+    refined=extractSection(src,"JAPANESE_REFINED");
+    script=extractSection(src,"ENGLISH_SCRIPT");
+    translation=extractSection(src,"JAPANESE_TRANSLATION");
+    phrases=extractSection(src,"USEFUL_PHRASES");
+    vocab=extractSection(src,"TOEIC_VOCABULARY");
+    questions=extractSection(src,"CONVERSATION_QUESTIONS");
+    quiz=extractSection(src,"MINI_QUIZ");
+  }catch(e){
+    text("importStatus","セクション抽出で一部エラーがありましたが，取り込みを継続します。");
+  }
 
   if(!script){
     var lines=src.split(/\n+/).map(function(x){return x.trim()}).filter(Boolean);
-    var englishLines=lines.filter(function(x){
-      return /[A-Za-z]/.test(x) && !/[ぁ-んァ-ヶ一-龠]/.test(x) && !/^\[.*\]$/.test(x);
-    });
+    var englishLines=lines.filter(function(x){return isEnglishLine(x) && !/^\[.*\]$/.test(x);});
     script=englishLines.length?englishLines.join(" "):src;
   }
 
@@ -615,13 +636,15 @@ function importChatGPTResult(){
   if(el("scriptText"))el("scriptText").value=script;
   if(el("translation"))text("translation",translation);
 
-  if(phrases)renderPhraseList(phrases);
-  if(vocab)renderVocabList(vocab);
+  try{if(phrases)renderPhraseList(phrases)}catch(e){}
+  try{if(vocab)renderVocabList(vocab)}catch(e){}
 
-  if(typeof makeShadowFromScript==="function"){
+  try{
     shadowBlocksData=[];
-    html("shadowBlocks","");
+    if(el("shadowBlocks"))html("shadowBlocks","");
     makeShadowFromScript(script);
+  }catch(e){
+    text("importStatus","Shadowブロック分割でエラー: "+(e.message||e));
   }
 
   if(questions && el("questions"))text("questions",questions);
@@ -644,6 +667,8 @@ function importChatGPTResult(){
   setTimeout(function(){showTab("scriptTab")},80);
   setTimeout(function(){showTab("scriptTab")},250);
 }
+
+
 
 
 function extractSection(src,name){
@@ -743,6 +768,221 @@ function cleanEnglishShadowLines(text){
     out=sentences.map(function(s){return s.trim()}).filter(isEnglishShadowLine);
   }
   return out;
+}
+
+
+// v28 restored foundational functions
+function countEnglishWords(s){
+  return (String(s||"").trim().match(/[A-Za-z]+(?:'[A-Za-z]+)?/g)||[]).length;
+}
+
+function focusForKeyboard(id){
+  var node=el(id);
+  if(node){
+    node.focus();
+    toast("入力欄を選択しました。iPhoneキーボードのマイクを使ってください。");
+  }
+}
+
+function speak(t){
+  var cleaned=String(t||"").replace(/Block\s*\d+/gi,"").trim();
+  if(!cleaned){toast("読み上げる文章がありません");return}
+  if(!("speechSynthesis" in window)){toast("このブラウザは読み上げに対応していません");return}
+  speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance(cleaned);
+  u.lang="en-US";
+  u.rate=(Number(document.getElementById("readWpm")?document.getElementById("readWpm").value:130)||130)/150;
+  speechSynthesis.speak(u);
+}
+
+function stopSpeaking(){
+  if("speechSynthesis" in window)speechSynthesis.cancel();
+}
+
+function dictate(id,lang,withTimer,mode){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    toast("Web音声認識が使えません。iPhoneキーボードのマイク入力を使ってください。");
+    focusForKeyboard(id);
+    return;
+  }
+
+  stopDictation(false);
+  var target=el(id);
+  if(!target){toast("入力欄が見つかりません");return}
+  var base=target.value?target.value+" ":"";
+  currentDictationMode=mode||"";
+
+  recognition=new SR();
+  recognition.lang=lang;
+  recognition.continuous=true;
+  recognition.interimResults=true;
+
+  recognition.onresult=function(e){
+    var finalText="",interim="";
+    for(var i=e.resultIndex;i<e.results.length;i++){
+      var t=e.results[i][0].transcript;
+      if(e.results[i].isFinal)finalText+=t+" ";
+      else interim+=t;
+    }
+    if(finalText)base+=finalText;
+    target.value=base+interim;
+  };
+
+  recognition.onerror=function(e){
+    toast("音声入力エラー: "+e.error+"。iPhoneキーボードのマイク入力を使ってください。");
+    if(withTimer){
+      if(currentDictationMode==="shadow"){stopShadowTimer();calcShadowWpm();}
+      else{stopTimer();calcWpm();}
+    }
+    focusForKeyboard(id);
+  };
+
+  recognition.onend=function(){
+    recognition=null;
+    if(withTimer){
+      if(currentDictationMode==="shadow"){
+        stopShadowTimer();
+        calcShadowWpm();
+        toast("Shadow音声入力終了。WPMを計測しました");
+      }else{
+        stopTimer();
+        calcWpm();
+        toast("音声入力終了。WPMを計測しました");
+      }
+    }
+    currentDictationMode=null;
+  };
+
+  try{
+    if(withTimer){
+      if(mode==="shadow")startShadowTimer();
+      else startTimer();
+    }
+    recognition.start();
+    toast("Web音声入力を開始しました");
+  }catch(e){
+    if(withTimer){
+      if(mode==="shadow")stopShadowTimer();
+      else stopTimer();
+    }
+    toast("音声入力を開始できませんでした。iPhoneキーボードのマイク入力を使ってください。");
+    focusForKeyboard(id);
+  }
+}
+
+function stopDictation(measure){
+  var mode=currentDictationMode;
+  if(recognition){
+    try{
+      recognition.onend=null;
+      recognition.stop();
+    }catch(e){}
+    recognition=null;
+    toast("音声入力を停止しました");
+  }
+  if(measure){
+    if(mode==="shadow"){
+      stopShadowTimer();
+      calcShadowWpm();
+    }else{
+      stopTimer();
+      calcWpm();
+    }
+  }
+  currentDictationMode=null;
+}
+
+function cleanSpeakText(t){
+  return String(t||"")
+    .replace(/POINT[:：].*/gi,"")
+    .replace(/Japanese[:：].*/gi,"")
+    .replace(/Tip[:：].*/gi,"")
+    .replace(/Block\s*\d+/gi,"")
+    .trim();
+}
+
+function renderShadowBlocks(){
+  shadowBlocksData=(shadowBlocksData||[]).filter(function(block){
+    var s=String(block||"").trim();
+    if(!s)return false;
+    if(/^(Japanese|Tip|POINT|Point|日本語|コツ|ポイント)[:：]/i.test(s))return false;
+    if(/[ぁ-んァ-ヶ一-龠]/.test(s))return false;
+    return /[A-Za-z]/.test(s);
+  });
+
+  var out=shadowBlocksData.map(function(block,i){
+    return '<div class="shadowBlockCard '+(selectedShadowIndex===i?'selectedShadow':'')+'" data-index="'+i+'">'
+      + '<div class="blockTitle">Block '+(i+1)+'</div>'
+      + '<div class="blockText">'+esc(block)+'</div>'
+      + '<div class="shadowControls"><button class="secondary repeatOneShadow" data-index="'+i+'">このブロックをリピート</button></div>'
+      + '</div>';
+  }).join("");
+
+  html("shadowBlocks",out);
+
+  document.querySelectorAll(".shadowBlockCard").forEach(function(card){
+    card.addEventListener("click",function(e){
+      if(e.target.tagName==="BUTTON")return;
+      selectedShadowIndex=Number(card.dataset.index);
+      text("selectedShadowInfo","選択中ブロック：Block "+(selectedShadowIndex+1));
+      renderShadowBlocks();
+    });
+  });
+
+  document.querySelectorAll(".repeatOneShadow").forEach(function(b){
+    b.addEventListener("click",function(e){
+      e.stopPropagation();
+      selectedShadowIndex=Number(b.dataset.index);
+      text("selectedShadowInfo","選択中ブロック：Block "+(selectedShadowIndex+1));
+      renderShadowBlocks();
+      repeatSelectedShadow();
+    });
+  });
+}
+
+function makeShadowFromScript(script){
+  var s=String(script||"").trim();
+  if(!s){
+    shadowBlocksData=[];
+    html("shadowBlocks","");
+    return;
+  }
+
+  s=s.replace(/\r/g,"\n")
+     .replace(/\[(ENGLISH_SCRIPT|SHADOWING|JAPANESE_TRANSLATION|USEFUL_PHRASES|TOEIC_VOCABULARY|CONVERSATION_QUESTIONS|MINI_QUIZ|JAPANESE_REFINED)\]/gi,"\n")
+     .replace(/^(English Script|Shadowing|Script)[:：]/gim,"\n");
+
+  var rough=s.split(/\n+|(?<=[.!?])\s+/).map(function(x){
+    return String(x||"").trim()
+      .replace(/^[-・*]\s*/,"")
+      .replace(/^\d+[.)]\s*/,"")
+      .trim();
+  }).filter(function(x){
+    if(!x)return false;
+    if(/^Block\s*\d+/i.test(x))return false;
+    if(typeof isNoiseLine==="function" && isNoiseLine(x))return false;
+    if(/[ぁ-んァ-ヶ一-龠]/.test(x))return false;
+    if(!/[A-Za-z]/.test(x))return false;
+    return true;
+  });
+
+  var cleanText=rough.join(" ").replace(/\s+/g," ").trim();
+  var sentences=cleanText.split(/(?<=[.!?])\s+/).map(function(x){return x.trim()}).filter(function(x){
+    if(!x)return false;
+    if(typeof isEnglishLine==="function")return isEnglishLine(x);
+    return /[A-Za-z]/.test(x) && !/[ぁ-んァ-ヶ一-龠]/.test(x);
+  });
+
+  shadowBlocksData=[];
+  for(var i=0;i<sentences.length;i+=2){
+    var chunk=sentences.slice(i,i+2).join(" ").trim();
+    if(chunk)shadowBlocksData.push(chunk);
+  }
+
+  selectedShadowIndex=null;
+  if(el("selectedShadowInfo"))text("selectedShadowInfo","選択中ブロック：なし");
+  renderShadowBlocks();
 }
 
 function renderShadowFromText(shadowText){
@@ -1308,18 +1548,18 @@ safeOn("chatgptResult","paste",function(){setTimeout(schedulePasteAutoImport,100
 safeOn("clearResultBox","click",function(){el("chatgptResult").value="";lastAutoImportedText=""});
 el("importChatGPTResult").addEventListener("click",importChatGPTResult);
 safeOn("clearChatGPTResult","click",function(){el("chatgptResult").value="";lastAutoImportedText="";text("importStatus","クリアしました。")});
-el("voiceJa").addEventListener("click",function(){dictate("memo","ja-JP",false,"memo")});
-el("focusMemo").addEventListener("click",function(){focusForKeyboard("memo")});
-el("stopVoice1").addEventListener("click",function(){stopDictation(false)});
+safeOn("voiceJa","click",function(){dictate("memo","ja-JP",false,"memo")});
+safeOn("focusMemo","click",function(){focusForKeyboard("memo")});
+safeOn("stopVoice1","click",function(){stopDictation(false)});
 el("speakScript").addEventListener("click",function(){speak(val("scriptText"))});
-el("stopSpeak").addEventListener("click",function(){if("speechSynthesis" in window)speechSynthesis.cancel()});
+safeOn("stopSpeak","click",stopSpeaking);
 el("clearScript").addEventListener("click",function(){el("scriptText").value="";text("translation","");text("refinedJapanese","");html("phrases","");html("vocab","");currentPhraseItems=[];currentVocabItems=[]});
-el("makeShadow").addEventListener("click",makeShadow);
-el("speakShadowAll").addEventListener("click",speakShadowAll);el("repeatShadowAll").addEventListener("click",repeatShadowAll);el("repeatSelectedShadow").addEventListener("click",repeatSelectedShadow);el("stopShadowRepeat").addEventListener("click",stopShadowRepeat);
-el("clearShadow").addEventListener("click",function(){text("shadowBlocks","")});el("voiceShadowEn").addEventListener("click",function(){resetShadowTimer();dictate("shadowSpoken","en-US",true,"shadow")});el("focusShadowSpoken").addEventListener("click",function(){focusForKeyboard("shadowSpoken")});el("stopShadowVoice").addEventListener("click",function(){stopDictation(true)});el("clearShadowSpoken").addEventListener("click",function(){el("shadowSpoken").value=""});el("startShadowTimer").addEventListener("click",startShadowTimer);el("stopShadowTimer").addEventListener("click",stopShadowTimer);el("resetShadowTimer").addEventListener("click",resetShadowTimer);if(el("calcShadowWpm"))el("calcShadowWpm").addEventListener("click",function(){stopShadowTimer();calcShadowWpm()});
-el("voiceEn").addEventListener("click",function(){dictate("spoken","en-US",true,"conv")});
-el("focusSpoken").addEventListener("click",function(){focusForKeyboard("spoken")});
-el("stopVoice2").addEventListener("click",function(){stopDictation(true)});
+safeOn("makeShadow","click",makeShadow);
+safeOn("speakShadowAll","click",speakShadowAll);el("repeatShadowAll").addEventListener("click",repeatShadowAll);el("repeatSelectedShadow").addEventListener("click",repeatSelectedShadow);el("stopShadowRepeat").addEventListener("click",stopShadowRepeat);
+el("clearShadow").addEventListener("click",function(){text("shadowBlocks","")});safeOn("voiceShadowEn","click",function(){resetShadowTimer();dictate("shadowSpoken","en-US",true,"shadow")});safeOn("focusShadowSpoken","click",function(){focusForKeyboard("shadowSpoken")});safeOn("stopShadowVoice","click",function(){stopDictation(true)});el("clearShadowSpoken").addEventListener("click",function(){el("shadowSpoken").value=""});el("startShadowTimer").addEventListener("click",startShadowTimer);el("stopShadowTimer").addEventListener("click",stopShadowTimer);el("resetShadowTimer").addEventListener("click",resetShadowTimer);if(el("calcShadowWpm"))if(el("calcShadowWpm"))safeOn("calcShadowWpm","click",function(){stopShadowTimer();calcShadowWpm()});
+safeOn("voiceEn","click",function(){resetTimer();dictate("spoken","en-US",true,"conv")});
+safeOn("focusSpoken","click",function(){focusForKeyboard("spoken")});
+safeOn("stopVoice2","click",function(){stopDictation(true)});
 el("clearSpoken").addEventListener("click",function(){el("spoken").value=""});
 el("startTimer").addEventListener("click",startTimer);
 el("stopTimer").addEventListener("click",stopTimer);
