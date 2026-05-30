@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v24 Recovery</title>
+<title>Hiro English Coach Stable v25 Recovery</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -299,8 +299,8 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v24 Recovery</h1>
-<div class="sub">Recovery版：Shadow英語ブロック専用表示 → Scriptクリア位置修正</div>
+<h1>Hiro English Coach Stable v25 Recovery</h1>
+<div class="sub">Recovery版：貼り戻し致命バグ修正 → Script反映復旧</div>
 </header>
 
 <div class="wrap">
@@ -541,49 +541,63 @@ function makeAiPrompt(){
 }
 function copyAiPrompt(){var p=el("aiPromptBox").innerText||"";if(!p||p.indexOf("ここに")===0){makeAiPrompt();return}try{navigator.clipboard.writeText(p);toast("コピーしました")}catch(e){toast("手動でコピーしてください")}}
 function openChatGPT(){makeAiPrompt();toast("プロンプトをコピーしました。ChatGPTで貼り付けて送信してください。");setTimeout(function(){try{window.open("https://chatgpt.com/","_blank")}catch(e){location.href="https://chatgpt.com/"}},300)}
+
+var importBusy=false;
+var lastImportedText="";
+
+function runChatGPTImport(reason){
+  var t=val("chatgptResult");
+  if(!t || t.trim().length<20){
+    return false;
+  }
+  if(importBusy)return false;
+  if(t===lastImportedText && reason!=="manual"){
+    return false;
+  }
+  importBusy=true;
+  try{
+    lastImportedText=t;
+    importChatGPTResult();
+    return true;
+  }catch(e){
+    text("importStatus","取り込みエラー: "+(e.message||e));
+    toast("取り込みエラー: "+(e.message||e));
+    return false;
+  }finally{
+    setTimeout(function(){importBusy=false},300);
+  }
+}
+
 async function pasteFromClipboard(){
   try{
     var t=await navigator.clipboard.readText();
-    if(t){
-      el("chatgptResult").value=t;
-      lastAutoImportedText="";
-      toast("クリップボードから貼り付けました。自動で取り込みます。");
-      setTimeout(function(){importChatGPTResult();},150);
-    }else{
+    if(!t){
       toast("クリップボードが空です");
+      return;
     }
+    el("chatgptResult").value=t;
+    lastImportedText="";
+    text("importStatus","クリップボードから貼り付けました。取り込みます。");
+    toast("貼り付けました。取り込みます。");
+    setTimeout(function(){runChatGPTImport("clipboard")},80);
   }catch(e){
-    toast("自動貼付できない場合は，貼り戻し欄を長押ししてペーストしてください。ペースト後は自動取り込みします。");
+    text("importStatus","ブラウザ制限で自動貼付できません。貼り戻し欄を長押し/貼り付けしてください。");
+    toast("自動貼付できません。手動でペーストしてください。");
     el("chatgptResult").focus();
   }
 }
-function extractSection(src,tag){var start=src.indexOf("["+tag+"]");if(start<0)return"";start+=tag.length+2;var rest=src.slice(start);var next=rest.search(/\n\[[A-Z_]+\]/);if(next>=0)rest=rest.slice(0,next);return rest.trim()}
 
-
-function normalizeTextForWordCount(s){
-  return String(s||"")
-    .replace(/[’']/g,"'")
-    .replace(/[.,!?;:"“”()[\]{}<>]/g," ")
-    .replace(/\s+/g," ")
-    .trim();
+function extractSection(src,name){
+  src=String(src||"").replace(/\r/g,"");
+  var startTag="["+name+"]";
+  var idx=src.indexOf(startTag);
+  if(idx<0)return "";
+  var rest=src.slice(idx+startTag.length);
+  var next=rest.search(/\n\[[A-Z_]+\]/);
+  if(next>=0)rest=rest.slice(0,next);
+  return rest.trim();
 }
 
-function countEnglishWords(s){
-  var normalized = normalizeTextForWordCount(s);
-  if(!normalized) return 0;
-  var matches = normalized.match(/[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*/g);
-  return matches ? matches.length : 0;
-}
-
-function isNoiseLine(raw){
-  var s = String(raw||"").trim();
-  if(!s) return true;
-  if(/^\[?[A-Z_ ]+\]?$/.test(s)) return true;
-  if(/^(USEFUL\s*PHRASES|TOEIC\s*VOCABULARY|VOCABULARY|PHRASES|重要表現|語彙)$/i.test(s)) return true;
-  if(/^\d+[.)]\s*$/.test(s)) return true;
-  if(/^[-・*]\s*$/.test(s)) return true;
-  return false;
-}
 function parseLineItem(line){
   var raw=String(line||"").trim();
   raw=raw.replace(/^[-・*]\s*/,"").replace(/^\d+[.)]\s*/,"").trim();
@@ -1231,7 +1245,7 @@ el("makeAiPrompt").addEventListener("click",makeAiPrompt);
 el("copyAiPrompt").addEventListener("click",copyAiPrompt);
 el("openChatGPT").addEventListener("click",openChatGPT);
 el("clearAiPrompt").addEventListener("click",function(){text("aiPromptBox","ここにChatGPTへ貼るプロンプトが表示されます。")});
-el("pasteFromClipboard").addEventListener("click",pasteFromClipboard);safeOn("chatgptResult","paste",function(){setTimeout(schedulePasteAutoImport,100)});safeOn("chatgptResult","input",function(){if(val("chatgptResult").length>20){schedulePasteAutoImport()}});el("chatgptResult").addEventListener("input",function(){if(val("chatgptResult").length>20){schedulePasteAutoImport()}});
+safeOn("chatgptResult","paste",function(){setTimeout(schedulePasteAutoImport,100)});safeOn("chatgptResult","input",function(){if(val("chatgptResult").length>20){schedulePasteAutoImport()}});el("chatgptResult").addEventListener("input",function(){if(val("chatgptResult").length>20){schedulePasteAutoImport()}});
 safeOn("clearResultBox","click",function(){el("chatgptResult").value="";lastAutoImportedText=""});
 el("importChatGPTResult").addEventListener("click",importChatGPTResult);
 safeOn("clearChatGPTResult","click",function(){el("chatgptResult").value="";lastAutoImportedText="";text("importStatus","クリアしました。")});
@@ -1262,7 +1276,12 @@ el("makeSavedQuiz").addEventListener("click",makeSavedQuiz);
 el("makeRandomSavedQuiz").addEventListener("click",makeRandomSavedQuiz);
 el("saveSettings").addEventListener("click",saveSettings);safeOn("testSync","click",function(e){e.preventDefault();testSync()});el("exportData").addEventListener("click",exportLearningData);el("copyExportData").addEventListener("click",copyExportData);el("importData").addEventListener("click",importLearningData);safeOn("saveCloud","click",function(e){e.preventDefault();saveCloud()});safeOn("loadCloud","click",function(e){e.preventDefault();loadCloud()});el("clearTransferBox").addEventListener("click",function(){el("dataTransferBox").value="";text("dataTransferStatus","クリアしました。")});
 el("clearData").addEventListener("click",function(){if(confirm("WPM履歴を削除しますか？")){var d=getData();d.sessions=[];saveData(d);drawChart()}});el("rangeAll").addEventListener("click",function(){setStatsRange("all")});el("rangeWeek").addEventListener("click",function(){setStatsRange("week")});el("rangeMonth").addEventListener("click",function(){setStatsRange("month")});
-setupRateSlider();bindCloudButtons();loadSaved();setTimeout(setupRateSlider,300);setTimeout(updateRateValue,600);updateRateValue();
+setupRateSlider();bindCloudButtons();
+safeOn("pasteFromClipboard","click",function(e){if(e)e.preventDefault();pasteFromClipboard()});
+safeOn("importResult","click",function(e){if(e)e.preventDefault();runChatGPTImport("manual")});
+safeOn("chatgptResult","paste",function(){lastImportedText="";setTimeout(function(){runChatGPTImport("paste")},120)});
+safeOn("chatgptResult","input",function(){var t=val("chatgptResult");if(t&&t.length>20){setTimeout(function(){runChatGPTImport("input")},350)}});
+loadSaved();setTimeout(setupRateSlider,300);setTimeout(updateRateValue,600);updateRateValue();
 });
 })();
 </script>
