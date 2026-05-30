@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v10</title>
+<title>Hiro English Coach Stable v11</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -163,12 +163,83 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 .legend .shadowLine{background:#34d399}
 .ratePreview{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:8px;text-align:center;font-size:22px;font-weight:900}
 
+
+/* v11 layout and stats polish */
+.shadowGrid{
+  display:grid;
+  grid-template-columns:minmax(0,1.05fr) minmax(300px,.95fr);
+  gap:14px;
+  align-items:start;
+}
+.statPanel{
+  background:linear-gradient(160deg,#0b1220,#111827);
+  border:1px solid #334155;
+  border-radius:18px;
+  padding:14px;
+}
+.statsControls{
+  background:#0b1220;
+  border:1px solid #334155;
+  border-radius:999px;
+  padding:6px;
+  display:inline-flex;
+  gap:6px;
+}
+.statsControls button{
+  border-radius:999px;
+  padding:8px 14px;
+  margin-top:0;
+}
+.statsControls button.activeRange{
+  background:linear-gradient(135deg,#2563eb,#60a5fa);
+  color:white;
+  box-shadow:0 0 18px rgba(96,165,250,.35);
+}
+.legend{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:10px 0 8px;
+  color:#dbeafe;
+  font-size:13px;
+}
+.legend span{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  background:#0b1220;
+  border:1px solid #334155;
+  border-radius:999px;
+  padding:6px 10px;
+}
+.legend i{display:inline-block;width:18px;height:4px;border-radius:999px}
+.legend .convLine{background:#60a5fa}
+.legend .shadowLine{background:#34d399}
+.ratePreview{
+  background:#0b1220;
+  border:1px solid #334155;
+  border-radius:14px;
+  padding:12px;
+  margin:8px 0;
+  font-size:15px;
+  color:#dbeafe;
+}
+.ratePreview b{
+  display:block;
+  font-size:26px;
+  color:#f8fafc;
+  margin-top:4px;
+}
+@media(max-width:760px){
+  .shadowGrid{display:block}
+}
+
 </style>
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v10</h1>
-<div class="sub">半自動版：WPM週月表示 → Shadow WPM追加 → 読み上げ速度表示</div>
+<h1>Hiro English Coach Stable v11</h1>
+<div class="sub">半自動版：Shadow左右表示 → Stylish Stats → WPM換算表示</div>
 </header>
 
 <div class="wrap">
@@ -241,6 +312,7 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 </section>
 
 <section id="shadow" class="screen">
+<div class="shadowGrid">
 <div class="card">
 <h2>Shadowing</h2>
 <div class="row"><button id="makeShadow" class="good">ブロック分割</button><button id="speakShadowAll" class="secondary">🔊 全体読み上げ</button></div>
@@ -263,7 +335,8 @@ Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて�
 <div id="shadowWpmOut" class="out"></div>
 </div>
 
-</section>
+
+</div></section>
 
 <section id="conv" class="screen">
 <div class="grid">
@@ -339,7 +412,8 @@ Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて�
 <section id="settings" class="screen">
 <div class="card">
 <h2>設定</h2>
-<label class="small">読み上げ速度：<b id="rateValue">0.86</b>x</label>
+<label class="small">読み上げ速度</label>
+<div class="ratePreview">読み上げ目安 <b><span id="rateValue">約130</span> WPM</b></div>
 <input id="rate" type="range" min="0.6" max="1.2" step="0.05" value="0.86">
 <button id="saveSettings" class="good">保存</button>
 <div id="settingsStatus" class="out">設定を変更できます。</div>
@@ -753,23 +827,89 @@ function aggregateSessions(sessions,range){
   return Object.keys(map).sort().slice(-12).map(function(k){var row=map[k];row.convWpm=row.conv.length?Math.round(row.conv.reduce(function(a,b){return a+b},0)/row.conv.length):null;row.shadowWpm=row.shadow.length?Math.round(row.shadow.reduce(function(a,b){return a+b},0)/row.shadow.length):null;return row})
 }
 function drawChart(){
-  var c=el("chart");if(!c)return;var ctx=c.getContext("2d"),sessions=(getData().sessions||[]);
-  ctx.clearRect(0,0,c.width,c.height);ctx.strokeStyle="#334155";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(50,20);ctx.lineTo(50,220);ctx.lineTo(860,220);ctx.stroke();if(!sessions.length)return;
+  var c=el("chart");if(!c)return;
+  var ctx=c.getContext("2d"),sessions=(getData().sessions||[]);
+  ctx.clearRect(0,0,c.width,c.height);
+
+  // background
+  var g=ctx.createLinearGradient(0,0,0,c.height);
+  g.addColorStop(0,"#0b1220");
+  g.addColorStop(1,"#111827");
+  ctx.fillStyle=g;ctx.fillRect(0,0,c.width,c.height);
+
+  var left=58,right=32,top=24,bottom=46;
+  var w=c.width-left-right,h=220-top;
+
+  ctx.strokeStyle="rgba(148,163,184,.35)";
+  ctx.lineWidth=1;
+  for(var gy=0;gy<=4;gy++){
+    var y=top+gy*(h/4);
+    ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(c.width-right,y);ctx.stroke();
+  }
+
+  if(!sessions.length){
+    ctx.fillStyle="#a7b3c7";ctx.font="14px sans-serif";ctx.fillText("WPM履歴はまだありません",left,120);return;
+  }
+
   var data=aggregateSessions(sessions,statsRange),values=[];
-  data.forEach(function(r){if(statsRange==="all")values.push(r.wpm);else{if(r.convWpm!=null)values.push(r.convWpm);if(r.shadowWpm!=null)values.push(r.shadowWpm)}});
-  var max=Math.max(120,Math.max.apply(null,values));function xAt(i){return 65+i*(770/Math.max(1,data.length-1))}function yAt(v){return 220-(v/max)*180}
+  data.forEach(function(r){
+    if(statsRange==="all")values.push(r.wpm);
+    else{if(r.convWpm!=null)values.push(r.convWpm);if(r.shadowWpm!=null)values.push(r.shadowWpm)}
+  });
+  var max=Math.max(120,Math.ceil(Math.max.apply(null,values)/20)*20);
+  function xAt(i){return left+i*(w/Math.max(1,data.length-1))}
+  function yAt(v){return top+h-(v/max)*h}
+  function drawYAxis(){
+    ctx.fillStyle="#94a3b8";ctx.font="11px sans-serif";
+    for(var i=0;i<=4;i++){
+      var val=Math.round(max-(max/4)*i);
+      var y=top+i*(h/4);
+      ctx.fillText(String(val),12,y+4);
+    }
+  }
+  drawYAxis();
+
   function drawSeries(type,color){
     ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();var started=false;
-    data.forEach(function(r,i){var v=statsRange==="all"?(r.type===type?r.wpm:null):(type==="conv"?r.convWpm:r.shadowWpm);if(v==null){started=false;return}var x=xAt(i),y=yAt(v);if(!started){ctx.moveTo(x,y);started=true}else ctx.lineTo(x,y)});
+    data.forEach(function(r,i){
+      var v=statsRange==="all"?(r.type===type?r.wpm:null):(type==="conv"?r.convWpm:r.shadowWpm);
+      if(v==null){started=false;return}
+      var x=xAt(i),y=yAt(v);
+      if(!started){ctx.moveTo(x,y);started=true}else ctx.lineTo(x,y);
+    });
     ctx.stroke();
-    data.forEach(function(r,i){var v=statsRange==="all"?(r.type===type?r.wpm:null):(type==="conv"?r.convWpm:r.shadowWpm);if(v==null)return;var x=xAt(i),y=yAt(v);ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.fillStyle="#f8fafc";ctx.font="12px sans-serif";ctx.fillText(String(v),x-8,y-10)})
+    data.forEach(function(r,i){
+      var v=statsRange==="all"?(r.type===type?r.wpm:null):(type==="conv"?r.convWpm:r.shadowWpm);
+      if(v==null)return;
+      var x=xAt(i),y=yAt(v);
+      ctx.fillStyle="#0b1220";ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle="#f8fafc";ctx.font="12px sans-serif";ctx.fillText(String(v),x-10,y-12);
+    });
   }
-  drawSeries("conv","#60a5fa");drawSeries("shadow","#34d399");
-  ctx.fillStyle="#a7b3c7";ctx.font="11px sans-serif";var step=Math.max(1,Math.ceil(data.length/6));
-  data.forEach(function(r,i){if(i%step!==0&&i!==data.length-1)return;var x=xAt(i),label=r.label;ctx.save();ctx.translate(x,238);ctx.rotate(-0.35);ctx.fillText(label,-12,0);ctx.restore()})
+
+  drawSeries("conv","#60a5fa");
+  drawSeries("shadow","#34d399");
+
+  // stylish x labels: compact chips, skipped automatically
+  var step=Math.max(1,Math.ceil(data.length/5));
+  data.forEach(function(r,i){
+    if(i%step!==0&&i!==data.length-1)return;
+    var x=xAt(i),label=r.label;
+    var tw=ctx.measureText(label).width+12;
+    ctx.fillStyle="rgba(15,23,42,.92)";
+    roundRect(ctx,x-tw/2,232,tw,22,11,true,false);
+    ctx.fillStyle="#cbd5e1";ctx.font="11px sans-serif";ctx.fillText(label,x-tw/2+6,247);
+  });
 }
 
-function saveSettings(){var d=getData();d.settings={rate:val("rate")};saveData(d);text("settingsStatus","設定を保存しました。読み上げ速度: "+val("rate")+"x");updateRateValue()}
+function roundRect(ctx,x,y,w,h,r,fill,stroke){
+  if(w<2*r)r=w/2;if(h<2*r)r=h/2;
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
+  if(fill)ctx.fill();if(stroke)ctx.stroke();
+}
+
+function saveSettings(){var d=getData();d.settings={rate:val("rate")};saveData(d);updateRateValue();text("settingsStatus","設定を保存しました。読み上げ速度目安: "+el("rateValue").innerText+" WPM")}
 function loadSaved(){var d=getData();if(d.memo)el("memo").value=d.memo;if(d.script)el("scriptText").value=d.script;if(d.translation)text("translation",d.translation);if(d.refined)text("refinedJapanese",d.refined);if(d.currentPhraseItems){currentPhraseItems=d.currentPhraseItems;html("phrases",currentPhraseItems.map(function(p,i){return '<div class="itemCard"><b>'+(i+1)+'. '+esc(p.expression)+'</b><div class="jp">'+esc(p.meaning)+'</div><div class="ex">'+esc(p.example||"")+'</div></div>'}).join(""))}if(d.currentVocabItems){currentVocabItems=d.currentVocabItems;html("vocab",currentVocabItems.map(function(p,i){return '<div class="itemCard"><b>'+(i+1)+'. '+esc(p.expression)+'</b><div class="jp">'+esc(p.meaning)+'</div><div class="ex">'+esc(p.example||"")+'</div></div>'}).join(""))}if(d.settings){if(d.settings.rate)el("rate").value=d.settings.rate}updateStats();renderSavedPhrases();updateTimerDisplay();updateShadowTimerDisplay();updateRateValue()}
 
 function setAllCurrentDetails(show){
@@ -779,7 +919,11 @@ function setAllCurrentDetails(show){
 }
 
 function updateRateValue(){
-  if(el("rateValue"))text("rateValue",String(Number(el("rate").value||0.86).toFixed(2)));
+  if(!el("rateValue"))return;
+  var rate=Number(el("rate").value||0.86);
+  var baseWpm=150;
+  var wpm=Math.round(baseWpm*rate);
+  text("rateValue","約"+wpm);
 }
 
 document.addEventListener("DOMContentLoaded",function(){
