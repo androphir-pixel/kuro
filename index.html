@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v7</title>
+<title>Hiro English Coach Stable v8</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -61,12 +61,103 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 .compactCard .meaning,.compactCard .example{display:none}
 
 @media(max-width:640px){.row{display:block}.metric{grid-template-columns:1fr 1fr 1fr}.cardRow{grid-template-columns:auto 1fr}}
+
+/* v8 responsive fixes */
+.studyCard,.itemCard,.testCard{
+  overflow:hidden;
+  word-break:break-word;
+  overflow-wrap:anywhere;
+}
+.studyCard label{
+  display:grid;
+  grid-template-columns:24px minmax(0,1fr);
+  gap:10px;
+  align-items:start;
+}
+.studyCard .front,.itemCard .front,.testQuestion{
+  white-space:normal;
+  word-break:break-word;
+  overflow-wrap:anywhere;
+  line-height:1.45;
+}
+.meaning,.example,.answerBox,.hintText{
+  white-space:normal;
+  word-break:break-word;
+  overflow-wrap:anywhere;
+}
+.mobileOnly{display:none}
+.desktopOnly{display:block}
+.quizPrompt{
+  background:#111827;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px;
+  margin:8px 0;
+}
+.quizPrompt .label{
+  color:#a7b3c7;
+  font-size:12px;
+  display:block;
+  margin-bottom:4px;
+}
+.quizPrompt .content{
+  color:#f8fafc;
+  font-weight:800;
+  font-size:16px;
+  line-height:1.5;
+}
+@media(max-width:640px){
+  body{font-size:15px}
+  header{padding:14px 14px}
+  h1{font-size:19px}
+  .wrap{padding:10px 10px 80px}
+  .tabs{gap:6px;padding:8px;margin-left:-10px;margin-right:-10px;border-radius:0}
+  .tab{padding:9px 11px;font-size:13px}
+  .grid{display:block}
+  .card{padding:12px;border-radius:14px}
+  .row{display:block}
+  .row>*{width:100%;margin-top:8px}
+  textarea{min-height:105px;font-size:16px}
+  button{width:100%;font-size:14px}
+  .metric{grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .metric div{padding:8px}
+  .metric b{font-size:18px}
+  .studyCard,.itemCard,.testCard{padding:10px;border-radius:12px;margin-bottom:10px}
+  .studyCard label{grid-template-columns:22px minmax(0,1fr)}
+  .studyCard input[type="checkbox"]{width:20px;height:20px;margin-top:2px}
+  .studyCard .front,.itemCard .front{
+    font-size:16px;
+    line-height:1.45;
+    display:block;
+    max-width:100%;
+  }
+  .badge{
+    display:inline-block;
+    margin-left:0;
+    margin-top:5px;
+    white-space:normal;
+    line-height:1.3;
+  }
+  .meaning,.example{
+    font-size:14px;
+    line-height:1.55;
+    padding:8px;
+  }
+  .testQuestion{font-size:15px;line-height:1.5}
+  .quizPrompt .content{font-size:15px}
+  .answerText{font-size:16px;line-height:1.5}
+  .timer{font-size:28px;padding:10px}
+  canvas{height:170px}
+  .mobileOnly{display:block}
+  .desktopOnly{display:none}
+}
+
 </style>
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v7</h1>
-<div class="sub">半自動版：データ移行対応 → カード管理改善 → WPM修正</div>
+<h1>Hiro English Coach Stable v8</h1>
+<div class="sub">半自動版：スマホ表示改善 → クイズ表示改善 → 復習カード最適化</div>
 </header>
 
 <div class="wrap">
@@ -426,6 +517,7 @@ function makeReview(){
   bindToggleCards();
 }
 
+function saveSelectedCurrentPhrases(){var selected=[].slice.call(document.querySelectorAll(".currentSelect:checked")).map(function(c){return currentPhraseItems[Number(c.dataset.index)]}).filter(Boolean);if(!selected.length){toast("蓄積するカードを選択してください");return}var d=getData();d.savedPhrases=d.savedPhrases||[];selected.forEach(function(p){d.savedPhrases.push(Object.assign({},p,{id:Date.now()+"-"+Math.random().toString(36).slice(2),correct:0,total:0,created:new Date().toISOString()}))});saveData(d);toast("選択したカードを蓄積しました");showTab("cards")}
 function bindToggleCards(){
   document.querySelectorAll(".toggleCard").forEach(function(b){
     b.addEventListener("click",function(){
@@ -435,7 +527,6 @@ function bindToggleCards(){
   });
 }
 
-function saveSelectedCurrentPhrases(){var selected=[].slice.call(document.querySelectorAll(".currentSelect:checked")).map(function(c){return currentPhraseItems[Number(c.dataset.index)]}).filter(Boolean);if(!selected.length){toast("蓄積するカードを選択してください");return}var d=getData();d.savedPhrases=d.savedPhrases||[];selected.forEach(function(p){d.savedPhrases.push(Object.assign({},p,{id:Date.now()+"-"+Math.random().toString(36).slice(2),correct:0,total:0,created:new Date().toISOString()}))});saveData(d);toast("選択したカードを蓄積しました");showTab("cards")}
 function renderSavedPhrases(){
   var items=getData().savedPhrases||[];
   if(!items.length){
@@ -449,7 +540,7 @@ function renderSavedPhrases(){
       + '<span class="front">'+esc(p.expression)+' <span class="badge">正答率 '+rate+'% ('+(p.correct||0)+'/'+(p.total||0)+')</span></span></label>'
       + '<button class="secondary toggleCard">詳細を表示/非表示</button>'
       + '<div class="toggleBody">'
-      + (p.meaning?'<div class="meaning"><b>和訳</b><br>'+esc(p.meaning)+'</div>':'')
+      + (p.meaning?'<div class="meaning"><b>和訳</b><br>'+esc(p.meaning)+'</div>':'<div class="meaning"><b>和訳</b><br>未登録</div>')
       + (p.example?'<div class="example"><b>例文</b><br>'+esc(p.example)+'</div>':'')
       + '</div></div>';
   }).join(""));
@@ -465,12 +556,12 @@ function makeQuizFromItems(items){
   items=items.slice(0,10);
   html("savedQuiz",items.map(function(p,i){
     return '<div class="testCard">'
-      + '<div class="testQuestion">Q'+(i+1)+'. 次の日本語を英語で言うと？</div>'
-      + '<div class="meaning">'+esc(p.meaning||"意味未登録")+'</div>'
+      + '<div class="testQuestion">Q'+(i+1)+'. 次の日本語を英語で言ってください。</div>'
+      + '<div class="quizPrompt"><span class="label">日本語</span><div class="content">'+esc(p.meaning||"意味未登録")+'</div></div>'
       + '<button class="secondary showAnswer" data-id="'+esc(p.id)+'">答えを見る</button>'
       + '<div class="answerBox">'
-      + '<div class="answerText">'+esc(p.expression)+'</div>'
-      + (p.example?'<div class="hintText">例文: '+esc(p.example)+'</div>':'')
+      + '<div class="quizPrompt"><span class="label">英語表現</span><div class="content">'+esc(p.expression)+'</div></div>'
+      + (p.example?'<div class="quizPrompt"><span class="label">例文</span><div class="content">'+esc(p.example)+'</div></div>':'')
       + '<div class="row"><button class="good markCorrect" data-id="'+esc(p.id)+'">正解</button><button class="danger markWrong" data-id="'+esc(p.id)+'">不正解</button></div>'
       + '</div></div>';
   }).join(""));
@@ -478,11 +569,13 @@ function makeQuizFromItems(items){
     b.addEventListener("click",function(){
       var a=b.nextElementSibling;
       a.style.display=a.style.display==="block"?"none":"block";
+      b.innerText = a.style.display==="block" ? "答えを隠す" : "答えを見る";
     })
   });
   document.querySelectorAll(".markCorrect").forEach(function(b){b.addEventListener("click",function(){markAnswer(b.dataset.id,true)})});
   document.querySelectorAll(".markWrong").forEach(function(b){b.addEventListener("click",function(){markAnswer(b.dataset.id,false)})});
 }
+
 function makeSavedQuiz(){makeQuizFromItems(selectedSavedItems())}
 function makeRandomSavedQuiz(){var items=(getData().savedPhrases||[]).slice().sort(function(){return Math.random()-0.5}).slice(0,5);makeQuizFromItems(items)}
 function markAnswer(id,ok){var d=getData();(d.savedPhrases||[]).forEach(function(p){if(p.id===id){p.total=(p.total||0)+1;if(ok)p.correct=(p.correct||0)+1}});saveData(d);toast(ok?"正解として記録しました":"不正解として記録しました")}
