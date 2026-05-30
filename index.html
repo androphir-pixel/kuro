@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v22 Recovery</title>
+<title>Hiro English Coach Stable v23 Recovery</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -299,8 +299,8 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v22 Recovery</h1>
-<div class="sub">Recovery版：クラウド同期修正 → 貼り戻し自動取込 → Shadow自動分割</div>
+<h1>Hiro English Coach Stable v23 Recovery</h1>
+<div class="sub">Recovery版：取り込み時Shadow強制自動分割 → Script操作改善</div>
 </header>
 
 <div class="wrap">
@@ -363,8 +363,8 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 <h3>AI整理後の日本語</h3>
 <div id="refinedJapanese" class="out"></div>
 <h3>English Script</h3>
-<textarea id="scriptText" placeholder="ここに英語スクリプトが入ります。"></textarea>
 <button class="secondary" id="clearScript">Scriptをクリア</button>
+<textarea id="scriptText" placeholder="ここに英語スクリプトが入ります。"></textarea>
 <h3>Japanese Translation</h3>
 <div id="translation" class="out"></div>
 <h3>Useful Phrases</h3>
@@ -378,7 +378,7 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 <div class="shadowGrid">
 <div class="card">
 <h2>Shadowing</h2>
-<div class="row"><button id="makeShadow" class="good">ブロック分割</button><button id="speakShadowAll" class="secondary">🔊 全体読み上げ</button></div><div class="shadowControls"><button id="repeatShadowAll" class="secondary">全体リピート</button><button id="repeatSelectedShadow" class="secondary">選択ブロックをリピート</button><button id="stopShadowRepeat" class="danger">リピート停止</button></div><div id="selectedShadowInfo" class="small">選択中ブロック：なし</div>
+<div class="row"><button id="makeShadow" class="good">ブロック再分割</button><button id="speakShadowAll" class="secondary">🔊 全体読み上げ</button></div><div class="shadowControls"><button id="repeatShadowAll" class="secondary">全体リピート</button><button id="repeatSelectedShadow" class="secondary">選択ブロックをリピート</button><button id="stopShadowRepeat" class="danger">リピート停止</button></div><div id="selectedShadowInfo" class="small">選択中ブロック：なし</div>
 <div class="out">Japanese: 各ブロックの意味を確認しながら，英語の語順で理解しましょう。
 Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて読みましょう。</div>
 <div id="shadowBlocks" class="out"></div>
@@ -847,15 +847,35 @@ function renderShadowBlocks(){
 
 function makeShadowFromScript(script){
   var s=String(script||"").trim();
-  if(!s){shadowBlocksData=[];html("shadowBlocks","");return}
-  var sentences=s.replace(/\r/g," ").replace(/\n+/g," ").split(/(?<=[.!?])\s+/).map(function(x){return x.trim()}).filter(function(x){
+  if(!s){
+    shadowBlocksData=[];
+    html("shadowBlocks","");
+    return;
+  }
+
+  // Clean common labels and accidental pasted headings.
+  s=s.replace(/\r/g," ")
+     .replace(/\n+/g," ")
+     .replace(/\[(ENGLISH_SCRIPT|SHADOWING|JAPANESE_TRANSLATION|USEFUL_PHRASES|TOEIC_VOCABULARY|CONVERSATION_QUESTIONS|MINI_QUIZ)\]/gi," ")
+     .replace(/^(English Script|Shadowing|Script)[:：]/gi," ")
+     .replace(/\s+/g," ")
+     .trim();
+
+  var sentences=s.split(/(?<=[.!?])\s+/).map(function(x){
+    return x.trim()
+      .replace(/^[-・*]\s*/,"")
+      .replace(/^\d+[.)]\s*/,"")
+      .trim();
+  }).filter(function(x){
     return x && /[A-Za-z]/.test(x) && !/[ぁ-んァ-ヶ一-龠]/.test(x) && !/^Block\s*\d+/i.test(x);
   });
+
   shadowBlocksData=[];
   for(var i=0;i<sentences.length;i+=2){
     var chunk=sentences.slice(i,i+2).join(" ").trim();
     if(chunk)shadowBlocksData.push(chunk);
   }
+
   selectedShadowIndex=null;
   text("selectedShadowInfo","選択中ブロック：なし");
   renderShadowBlocks();
@@ -1432,9 +1452,9 @@ el("copyAiPrompt").addEventListener("click",copyAiPrompt);
 el("openChatGPT").addEventListener("click",openChatGPT);
 el("clearAiPrompt").addEventListener("click",function(){text("aiPromptBox","ここにChatGPTへ貼るプロンプトが表示されます。")});
 el("pasteFromClipboard").addEventListener("click",pasteFromClipboard);safeOn("chatgptResult","paste",function(){setTimeout(schedulePasteAutoImport,100)});safeOn("chatgptResult","input",function(){if(val("chatgptResult").length>20){schedulePasteAutoImport()}});el("chatgptResult").addEventListener("input",function(){if(val("chatgptResult").length>20){schedulePasteAutoImport()}});
-el("clearResultBox").addEventListener("click",function(){el("chatgptResult").value=""});
+safeOn("clearResultBox","click",function(){el("chatgptResult").value="";lastAutoImportedText=""});
 el("importChatGPTResult").addEventListener("click",importChatGPTResult);
-el("clearChatGPTResult").addEventListener("click",function(){el("chatgptResult").value="";text("importStatus","クリアしました。")});
+safeOn("clearChatGPTResult","click",function(){el("chatgptResult").value="";lastAutoImportedText="";text("importStatus","クリアしました。")});
 el("voiceJa").addEventListener("click",function(){dictate("memo","ja-JP",false,"memo")});
 el("focusMemo").addEventListener("click",function(){focusForKeyboard("memo")});
 el("stopVoice1").addEventListener("click",function(){stopDictation(false)});
