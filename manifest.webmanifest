@@ -1,7 +1,7 @@
 {
-  "name": "Hiro English Coach Stable v20 Recovery",
+  "name": "Hiro English Coach Stable v21 Recovery",
   "short_name": "English Coach",
-  "start_url": "./index.html?v=stable-v20",
+  "start_url": "./index.html?v=stable-v21",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
