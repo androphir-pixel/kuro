@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v18</title>
+<title>Hiro English Coach Stable v19 Recovery</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -286,113 +286,12 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
   display:none !important;
 }
 
-
-.shadowBlockCard{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:10px;margin-bottom:10px;line-height:1.65}
-.shadowBlockCard .blockTitle{font-size:12px;color:#93c5fd;font-weight:800;margin-bottom:6px}
-.shadowBlockCard .blockText{white-space:pre-wrap;word-break:break-word}
-.shadowBlockCard.selectedShadow{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(96,165,250,.20)}
-.shadowControls{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-.shadowControls button{width:auto}
-.dueBadge{display:inline-block;border-radius:999px;background:#3f1d1d;border:1px solid #f87171;color:#fecaca;padding:2px 7px;font-size:11px;margin-left:5px}
-
-/* v18 stylish stats */
-.statsHero{
-  background:radial-gradient(circle at top left,rgba(96,165,250,.22),transparent 34%),
-             radial-gradient(circle at top right,rgba(52,211,153,.18),transparent 30%),
-             linear-gradient(160deg,#0b1220,#111827 70%);
-  border:1px solid rgba(148,163,184,.28);
-  border-radius:22px;
-  padding:16px;
-  box-shadow:0 18px 45px rgba(0,0,0,.28);
-}
-.statsKpis{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:10px;
-  margin:10px 0 14px;
-}
-.kpiCard{
-  background:rgba(15,23,42,.72);
-  border:1px solid rgba(148,163,184,.22);
-  border-radius:16px;
-  padding:12px;
-}
-.kpiCard .label{
-  color:#94a3b8;
-  font-size:12px;
-  margin-bottom:4px;
-}
-.kpiCard .value{
-  color:#f8fafc;
-  font-size:26px;
-  font-weight:900;
-  line-height:1.1;
-}
-.kpiCard .sub{
-  color:#a7b3c7;
-  font-size:11px;
-  margin-top:4px;
-}
-.statsControls{
-  background:rgba(15,23,42,.74);
-  border:1px solid rgba(148,163,184,.24);
-  border-radius:999px;
-  padding:6px;
-  display:inline-flex;
-  gap:6px;
-  margin:8px 0;
-}
-.statsControls button{
-  border-radius:999px;
-  padding:8px 14px;
-  margin-top:0;
-  width:auto;
-}
-.statsControls button.activeRange{
-  background:linear-gradient(135deg,#2563eb,#60a5fa);
-  color:white;
-  box-shadow:0 0 20px rgba(96,165,250,.35);
-}
-.legend{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin:10px 0 8px;
-  color:#dbeafe;
-  font-size:13px;
-}
-.legend span{
-  display:inline-flex;
-  align-items:center;
-  gap:7px;
-  background:rgba(15,23,42,.7);
-  border:1px solid rgba(148,163,184,.22);
-  border-radius:999px;
-  padding:6px 10px;
-}
-.legend i{display:inline-block;width:18px;height:4px;border-radius:999px}
-.legend .convLine{background:#60a5fa}
-.legend .shadowLine{background:#34d399}
-#chart{
-  width:100%;
-  height:280px;
-  background:transparent;
-  border:0;
-  border-radius:18px;
-}
-@media(max-width:640px){
-  .statsKpis{grid-template-columns:1fr 1fr}
-  .kpiCard{padding:10px}
-  .kpiCard .value{font-size:22px}
-  #chart{height:240px}
-}
-
 </style>
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v18</h1>
-<div class="sub">半自動版：Stylish Stats Dashboard → Shadowリピート → 忘却曲線テスト</div>
+<h1>Hiro English Coach Stable v19 Recovery</h1>
+<div class="sub">Recovery版：貼り戻し自動取込 → 音声入力復旧 → Shadow安定化</div>
 </header>
 
 <div class="wrap">
@@ -428,7 +327,7 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 
 <div class="card cardPaste">
 <h2 class="highlightTitle">ChatGPT結果の貼り戻し</h2>
-<p class="small">ショートカットやChatGPTで作成した回答をここに貼り付けてください。貼り付け後は自動で取り込みを試みます。</p>
+<p class="small">ショートカットやChatGPTで作成した回答をここに貼り付けてください。貼り付け後は自動で取り込み，Script画面へ移動します。</p>
 <div class="row"><button class="good" id="pasteFromClipboard">クリップボード貼付＋自動取込</button><button class="secondary" id="clearResultBox">貼り戻し欄をクリア</button></div>
 <textarea id="chatgptResult" placeholder="ChatGPTの回答をここに貼り付けてください。"></textarea>
 <div class="row"><button class="good" id="importChatGPTResult">結果をアプリに取り込む</button><button class="secondary" id="clearChatGPTResult">クリア</button></div>
@@ -468,7 +367,7 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 <div class="shadowGrid">
 <div class="card">
 <h2>Shadowing</h2>
-<div class="row"><button id="makeShadow" class="good">ブロック分割</button><button id="speakShadowAll" class="secondary">🔊 全体読み上げ</button></div><div class="shadowControls"><button id="repeatShadowAll" class="secondary">全体リピート</button><button id="repeatSelectedShadow" class="secondary">選択ブロックをリピート</button><button id="stopShadowRepeat" class="danger">リピート停止</button></div><div id="selectedShadowInfo" class="small">選択中ブロック：なし</div>
+<div class="row"><button id="makeShadow" class="good">ブロック分割</button><button id="speakShadowAll" class="secondary">🔊 全体読み上げ</button></div>
 <div class="out">Japanese: 各ブロックの意味を確認しながら，英語の語順で理解しましょう。
 Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて読みましょう。</div>
 <div id="shadowBlocks" class="out"></div>
@@ -531,7 +430,7 @@ Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて�
 <div class="card">
 <h2>後日確認テスト</h2>
 <p class="small">先に確認テストを表示します。蓄積カード一覧でカードを選択してから「選択カードでテスト」を押してください。</p>
-<div class="row"><button id="makeSavedQuiz" class="good">選択カードでテスト</button><button id="makeRandomSavedQuiz" class="secondary">復習優先5問</button></div>
+<div class="row"><button id="makeSavedQuiz" class="good">選択カードでテスト</button><button id="makeRandomSavedQuiz" class="secondary">ランダム5問</button></div>
 <div id="savedQuiz"></div>
 </div>
 <div class="card">
@@ -554,15 +453,14 @@ Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて�
 </section>
 
 <section id="stats" class="screen">
-<div class="statsHero">
-<h2>WPM Dashboard</h2>
-<div class="statsKpis">
-<div class="kpiCard"><div class="label">Average</div><div class="value" id="avgWpm">0</div><div class="sub">All records</div></div>
-<div class="kpiCard"><div class="label">Best</div><div class="value" id="statBest">0</div><div class="sub">Highest WPM</div></div>
-<div class="kpiCard"><div class="label">Last</div><div class="value" id="statLast">0</div><div class="sub">Latest record</div></div>
-<div class="kpiCard"><div class="label">Sessions</div><div class="value" id="statSessions">0</div><div class="sub">Conv. + Shadow</div></div>
+<div class="card">
+<h2>WPM履歴</h2>
+<div class="metric">
+<div><b id="avgWpm">0</b><span>Average</span></div>
+<div><b id="statBest">0</b><span>Best</span></div>
+<div><b id="statLast">0</b><span>Last</span></div>
 </div>
-<div class="statsControls"><button id="rangeAll" class="secondary activeRange">全期間</button><button id="rangeWeek" class="secondary">週</button><button id="rangeMonth" class="secondary">月</button></div><div class="legend"><span><i class="convLine"></i>Conv. WPM</span><span><i class="shadowLine"></i>Shadow WPM</span></div><canvas id="chart" width="1000" height="320"></canvas>
+<div class="statsControls"><button id="rangeAll" class="secondary activeRange">全期間</button><button id="rangeWeek" class="secondary">週</button><button id="rangeMonth" class="secondary">月</button></div><div class="legend"><span><i class="convLine"></i>Conv. WPM</span><span><i class="shadowLine"></i>Shadow WPM</span></div><canvas id="chart" width="900" height="260"></canvas>
 <button class="secondary" id="clearData">WPM履歴削除</button>
 </div>
 </section>
@@ -597,9 +495,8 @@ Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて�
 "use strict";
 if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister();});}).catch(function(){});}
 var storeKey="hiroEnglishCoach.stable.v5";
-var recognition=null, currentDictationTarget=null, currentDictationMode=null, timerStart=null, timerElapsed=0, timerInterval=null, shadowTimerStart=null, shadowTimerElapsed=0, shadowTimerInterval=null, statsRange="all";
+var recognition=null, currentDictationMode=null, currentDictationTarget=null, currentDictationMode=null, timerStart=null, timerElapsed=0, timerInterval=null, shadowTimerStart=null, shadowTimerElapsed=0, shadowTimerInterval=null, statsRange="all";
 var currentPhraseItems=[], currentVocabItems=[];
-var shadowBlocksData=[], selectedShadowIndex=null, shadowRepeatActive=false;
 
 function el(id){return document.getElementById(id)}
 function val(id){return (el(id).value||"").trim()}
@@ -625,7 +522,7 @@ function makeAiPrompt(){
 "[JAPANESE_TRANSLATION]\n英語スクリプトの自然な日本語訳を書いてください。\n\n"+
 "[USEFUL_PHRASES]\n重要表現を10個，英語表現 - 日本語意味 - 例文 の形式で書いてください。\n\n"+
 "[TOEIC_VOCABULARY]\nTOEICにも役立つ語彙を10個，英単語 - 日本語意味 - 例文 の形式で書いてください。\n\n"+
-"[SHADOWING]\n英語スクリプトだけを2〜3文ごとに区切ってください。POINTやTipが必要な場合は短く1行だけにしてください。読み上げ対象は英文だけにします。\n\n"+
+"[SHADOWING]\n英語スクリプトだけを2〜3文ごとに区切ってください。POINTやTipが必要な場合は短く1行だけにしてください。日本語解説や空白行は入れないでください。\n\n"+
 "[CONVERSATION_QUESTIONS]\n英会話練習用の質問を5個作ってください。\n\n"+
 "[MINI_QUIZ]\n穴埋め，英訳，意味確認を混ぜたミニクイズを5問作ってください。";
   text("aiPromptBox",prompt);
@@ -638,13 +535,13 @@ async function pasteFromClipboard(){
     var t=await navigator.clipboard.readText();
     if(t){
       el("chatgptResult").value=t;
-      toast("クリップボードから貼り付けました。自動取り込みします。");
-      setTimeout(importChatGPTResult,200);
+      toast("クリップボードから貼り付けました。自動で取り込みます。");
+      setTimeout(function(){importChatGPTResult();},250);
     }else{
       toast("クリップボードが空です");
     }
   }catch(e){
-    toast("自動貼付できません。入力欄を長押ししてペーストしてください。ペースト後は自動取り込みします。");
+    toast("自動貼付できない場合は，貼り戻し欄を長押ししてペーストしてください。ペースト後は自動取り込みします。");
     el("chatgptResult").focus();
   }
 }
@@ -763,32 +660,6 @@ function cleanEnglishShadowLines(text){
   return out;
 }
 
-function renderShadowBlocks(){
-  var out=shadowBlocksData.map(function(block,i){
-    var speakable=cleanSpeakText(block);
-    return '<div class="shadowBlockCard '+(selectedShadowIndex===i?'selectedShadow':'')+'" data-index="'+i+'">'
-      + '<div class="blockTitle">Block '+(i+1)+'</div>'
-      + (block.indexOf("POINT:")===0?'<span class="pointNote">'+esc(block)+'</span>':'<div class="blockText">'+esc(block)+'</div>')
-      + (speakable?'<div class="shadowControls"><button class="secondary speakOneShadow" data-index="'+i+'">このブロックを読む</button><button class="secondary repeatOneShadow" data-index="'+i+'">このブロックをリピート</button></div>':'')
-      + '</div>';
-  }).join("");
-  html("shadowBlocks",out);
-  document.querySelectorAll(".shadowBlockCard").forEach(function(card){
-    card.addEventListener("click",function(e){
-      if(e.target.tagName==="BUTTON")return;
-      selectedShadowIndex=Number(card.dataset.index);
-      text("selectedShadowInfo","選択中ブロック：Block "+(selectedShadowIndex+1));
-      renderShadowBlocks();
-    });
-  });
-  document.querySelectorAll(".speakOneShadow").forEach(function(b){
-    b.addEventListener("click",function(e){e.stopPropagation();speak(cleanSpeakText(shadowBlocksData[Number(b.dataset.index)]||""))});
-  });
-  document.querySelectorAll(".repeatOneShadow").forEach(function(b){
-    b.addEventListener("click",function(e){e.stopPropagation();selectedShadowIndex=Number(b.dataset.index);text("selectedShadowInfo","選択中ブロック：Block "+(selectedShadowIndex+1));repeatSelectedShadow()});
-  });
-}
-
 function renderShadowFromText(shadowText){
   var src=String(shadowText||"").replace(/\r/g,"");
   var rawLines=src.split("\n").map(function(x){return x.trim()}).filter(Boolean);
@@ -796,83 +667,148 @@ function renderShadowFromText(shadowText){
   rawLines.forEach(function(line){
     var s=line.replace(/^[-・*]\s*/,"").replace(/^\d+[.)]\s*/,"").trim();
     if(!s)return;
-    if(isPointLine(s))items.push({type:"point",text:s.replace(/^(POINT|Point|point|Tip|TIP|tip)[:：]\s*/,"")});
-    else if(isEnglishShadowLine(s))items.push({type:"english",text:s});
+    if(isPointLine(s)){
+      items.push({type:"point",text:s.replace(/^(POINT|Point|point|Tip|TIP|tip)[:：]\s*/,"")});
+    }else if(isEnglishShadowLine(s)){
+      items.push({type:"english",text:s});
+    }
   });
   if(!items.length){
     var fallback=cleanEnglishShadowLines(shadowText);
     items=fallback.map(function(x){return {type:"english",text:x}});
   }
-  shadowBlocksData=[];
-  var current="";
+  var htmlOut="",block=1,buf=[];
   items.forEach(function(item){
     if(item.type==="point"){
-      if(current.trim()){shadowBlocksData.push(current.trim());current=""}
-      shadowBlocksData.push("POINT: "+item.text);
+      if(buf.length){
+        htmlOut+="Block "+(block++)+"<br>"+buf.join(" ")+"<br><br>";
+        buf=[];
+      }
+      htmlOut+='<span class="pointNote">POINT: '+esc(item.text)+'</span><br>';
     }else{
-      current+=(current?" ":"")+item.text;
-      if((current.match(/[.!?]/g)||[]).length>=2){shadowBlocksData.push(current.trim());current=""}
+      buf.push(esc(item.text));
+      if(buf.length>=2){
+        htmlOut+="Block "+(block++)+"<br>"+buf.join(" ")+"<br><br>";
+        buf=[];
+      }
     }
   });
-  if(current.trim())shadowBlocksData.push(current.trim());
-  shadowBlocksData=shadowBlocksData.filter(function(x){return x&&x.trim()});
-  selectedShadowIndex=null;
-  text("selectedShadowInfo","選択中ブロック：なし");
-  renderShadowBlocks();
+  if(buf.length)htmlOut+="Block "+(block++)+"<br>"+buf.join(" ")+"<br><br>";
+  html("shadowBlocks",htmlOut.trim());
 }
 
-function cleanSpeakText(t){
-  return String(t||"").replace(/POINT[:：].*/gi,"").replace(/Block\s*\d+/gi,"").trim();
+function importChatGPTResult(){
+  var src=val("chatgptResult");if(!src){toast("ChatGPTの結果を貼り付けてください");return}
+  var refined=extractSection(src,"JAPANESE_REFINED"), script=extractSection(src,"ENGLISH_SCRIPT"), translation=extractSection(src,"JAPANESE_TRANSLATION"), phrases=extractSection(src,"USEFUL_PHRASES"), vocab=extractSection(src,"TOEIC_VOCABULARY"), shadow=extractSection(src,"SHADOWING"), questions=extractSection(src,"CONVERSATION_QUESTIONS"), quiz=extractSection(src,"MINI_QUIZ");
+  if(!script){script=src;toast("タグが見つからないため，全文をScriptへ取り込みます")}
+  text("refinedJapanese",refined);el("scriptText").value=script;text("translation",translation);
+  if(phrases)renderPhraseList(phrases);if(vocab)renderVocabList(vocab);if(shadow)renderShadowFromText(shadow);if(questions)text("questions",questions);if(quiz)html("quiz",'<div class="out">'+esc(quiz)+'</div>');
+  var d=getData();d.memo=val("memo");d.script=script;d.translation=translation;d.refined=refined;d.currentPhraseItems=currentPhraseItems;d.currentVocabItems=currentVocabItems;d.chatgptResult=src;saveData(d);
+  text("importStatus","取り込み完了。Script / Shadow / Conv. / Cards に反映されます。");toast("ChatGPT結果を取り込みました");showTab("scriptTab")
 }
 
-function speakShadowAll(){
-  var textToSpeak=shadowBlocksData.map(cleanSpeakText).filter(Boolean).join(" ");
-  speak(textToSpeak);
+
+var pasteAutoTimer=null;
+function schedulePasteAutoImport(){
+  if(pasteAutoTimer)clearTimeout(pasteAutoTimer);
+  pasteAutoTimer=setTimeout(function(){
+    var t=val("chatgptResult");
+    if(t && t.length>20){
+      toast("貼り付けを検知しました。自動で取り込みます。");
+      importChatGPTResult();
+    }
+  },450);
 }
 
-function repeatText(textToSpeak){
-  var cleaned=cleanSpeakText(textToSpeak);
-  if(!cleaned){toast("読み上げる英文がありません");return}
-  shadowRepeatActive=true;
-  function loop(){
-    if(!shadowRepeatActive)return;
-    if(!("speechSynthesis" in window)){toast("読み上げ非対応です");return}
-    speechSynthesis.cancel();
-    var u=new SpeechSynthesisUtterance(cleaned);
-    u.lang="en-US";
-    u.rate=(Number(document.getElementById("readWpm")?document.getElementById("readWpm").value:130)||130)/150;
-    u.onend=function(){if(shadowRepeatActive)setTimeout(loop,700)};
-    speechSynthesis.speak(u);
+function focusForKeyboard(id){el(id).focus();el(id).scrollIntoView({behavior:"smooth",block:"center"});toast("入力欄を開きました。iPhoneキーボードのマイクを押してください。")}
+function dictate(id,lang,withTimer,mode){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    toast("Web音声認識が使えません。iPhoneキーボードのマイク入力を使ってください。");
+    focusForKeyboard(id);
+    return;
   }
-  loop();
+  stopDictation(false);
+  var target=el(id);
+  if(!target){toast("入力欄が見つかりません");return}
+  var base=target.value?target.value+" ":"";
+  currentDictationMode=mode||"";
+  recognition=new SR();
+  recognition.lang=lang;
+  recognition.continuous=true;
+  recognition.interimResults=true;
+  recognition.onresult=function(e){
+    var finalText="",interim="";
+    for(var i=e.resultIndex;i<e.results.length;i++){
+      var t=e.results[i][0].transcript;
+      if(e.results[i].isFinal)finalText+=t+" ";
+      else interim+=t;
+    }
+    if(finalText)base+=finalText;
+    target.value=base+interim;
+  };
+  recognition.onerror=function(e){
+    toast("音声入力エラー: "+e.error+"。iPhoneキーボードのマイク入力を使ってください。");
+    if(withTimer){
+      if(currentDictationMode==="shadow" && typeof stopShadowTimer==="function" && typeof calcShadowWpm==="function"){stopShadowTimer();calcShadowWpm();}
+      else if(typeof stopTimer==="function" && typeof calcWpm==="function"){stopTimer();calcWpm();}
+    }
+    focusForKeyboard(id);
+  };
+  recognition.onend=function(){
+    recognition=null;
+    if(withTimer){
+      if(currentDictationMode==="shadow" && typeof stopShadowTimer==="function" && typeof calcShadowWpm==="function"){
+        stopShadowTimer();calcShadowWpm();toast("Shadow音声入力終了。WPMを計測しました");
+      }else if(typeof stopTimer==="function" && typeof calcWpm==="function"){
+        stopTimer();calcWpm();toast("音声入力終了。WPMを計測しました");
+      }
+    }
+    currentDictationMode=null;
+  };
+  try{
+    if(withTimer){
+      if(mode==="shadow" && typeof startShadowTimer==="function")startShadowTimer();
+      else if(typeof startTimer==="function")startTimer();
+    }
+    recognition.start();
+    toast("Web音声入力を開始しました");
+  }catch(e){
+    if(withTimer){
+      if(mode==="shadow" && typeof stopShadowTimer==="function")stopShadowTimer();
+      else if(typeof stopTimer==="function")stopTimer();
+    }
+    toast("音声入力を開始できませんでした。iPhoneキーボードのマイク入力を使ってください。");
+    focusForKeyboard(id);
+  }
 }
 
-function repeatShadowAll(){
-  repeatText(shadowBlocksData.map(cleanSpeakText).filter(Boolean).join(" "));
+function stopDictation(measure){
+  var mode=currentDictationMode;
+  if(recognition){
+    try{recognition.onend=null;recognition.stop()}catch(e){}
+    recognition=null;
+    toast("音声入力を停止しました");
+  }
+  if(measure){
+    if(mode==="shadow" && typeof stopShadowTimer==="function" && typeof calcShadowWpm==="function"){stopShadowTimer();calcShadowWpm();}
+    else if(typeof stopTimer==="function" && typeof calcWpm==="function"){stopTimer();calcWpm();}
+  }
+  currentDictationMode=null;
 }
 
-function repeatSelectedShadow(){
-  if(selectedShadowIndex===null||selectedShadowIndex===undefined){toast("リピートするブロックを選択してください");return}
-  repeatText(shadowBlocksData[selectedShadowIndex]||"");
-}
-
-function stopShadowRepeat(){
-  shadowRepeatActive=false;
-  if("speechSynthesis" in window)speechSynthesis.cancel();
-  toast("リピートを停止しました");
-}
-
+function speak(t){if(!t||!t.trim()){toast("読み上げる文章がありません");return}if(!("speechSynthesis" in window)){toast("このブラウザは読み上げに対応していません");return}speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=(Number(document.getElementById("readWpm")?document.getElementById("readWpm").value:130)||130)/150;speechSynthesis.speak(u)}
 function makeShadow(){
   var s=val("scriptText");
   if(!s){toast("先にScriptタブでスクリプトを生成してください");return}
   var sentences=s.replace(/\r/g," ").replace(/\n+/g," ").split(/(?<=[.!?])\s+/).map(function(x){return x.trim()}).filter(function(x){
     return x && /[A-Za-z]/.test(x) && !/[ぁ-んァ-ヶ一-龠]/.test(x);
   });
-  shadowBlocksData=[];
-  for(var i=0;i<sentences.length;i+=2){shadowBlocksData.push(sentences.slice(i,i+2).join(" "))}
-  selectedShadowIndex=null;
-  text("selectedShadowInfo","選択中ブロック：なし");
-  renderShadowBlocks();
+  var out="",block=1;
+  for(var i=0;i<sentences.length;i+=2){
+    out+="Block "+(block++)+"<br>"+sentences.slice(i,i+2).map(esc).join(" ")+"<br><br>";
+  }
+  html("shadowBlocks",out.trim());
 }
 
 function formatTime(sec){var m=Math.floor(sec/60),s=sec%60;return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
@@ -965,35 +901,6 @@ function deleteSelectedCards(){var ids=[].slice.call(document.querySelectorAll("
 function setSavedSelection(flag){document.querySelectorAll(".savedSelect").forEach(function(c){c.checked=flag})}
 function setCurrentSelection(flag){document.querySelectorAll(".currentSelect").forEach(function(c){c.checked=flag})}
 function selectedSavedItems(){var ids=[].slice.call(document.querySelectorAll(".savedSelect:checked")).map(function(c){return c.dataset.id});var items=getData().savedPhrases||[];return items.filter(function(p){return ids.length?ids.indexOf(p.id)>=0:false})}
-function nextDueIntervalDays(card){
-  var total=card.total||0, correct=card.correct||0, rate=total?correct/total:0;
-  if(total===0)return 0;
-  if(rate<0.5)return 1;
-  if(rate<0.8)return 3;
-  if(total<4)return 7;
-  return 14;
-}
-function isDueCard(card){
-  if(!card.lastTested)return true;
-  var due=new Date(card.lastTested);
-  due.setDate(due.getDate()+nextDueIntervalDays(card));
-  return new Date()>=due;
-}
-function cardPriorityScore(card){
-  var total=card.total||0, correct=card.correct||0, rate=total?correct/total:0;
-  var score=0;
-  if(!card.lastTested)score+=100;
-  if(isDueCard(card))score+=60;
-  score+=(1-rate)*40;
-  score+=Math.max(0,5-total)*4;
-  return score;
-}
-function dueCards(limit){
-  var items=(getData().savedPhrases||[]).slice();
-  items.sort(function(a,b){return cardPriorityScore(b)-cardPriorityScore(a)});
-  return items.slice(0,limit||5);
-}
-
 function makeQuizFromItems(items){
   if(!items.length){toast("テストするカードを選択してください");return}
   items=items.slice(0,10);
@@ -1020,11 +927,18 @@ function makeQuizFromItems(items){
 }
 
 function makeSavedQuiz(){makeQuizFromItems(selectedSavedItems())}
-function makeRandomSavedQuiz(){
-  var items=dueCards(5);
-  if(!items.length){toast("蓄積カードがありません");return}
-  makeQuizFromItems(items);
-  toast("復習優先カードを出題しました");
+function makeRandomSavedQuiz(){var items=(getData().savedPhrases||[]).slice().sort(function(){return Math.random()-0.5}).slice(0,5);makeQuizFromItems(items)}
+function markAnswer(id,ok){
+  var d=getData();
+  (d.savedPhrases||[]).forEach(function(p){
+    if(p.id===id){
+      p.total=(p.total||0)+1;
+      if(ok)p.correct=(p.correct||0)+1;
+      p.lastTested=new Date().toISOString();
+    }
+  });
+  saveData(d);
+  toast(ok?"正解として記録しました。自動同期します":"不正解として記録しました。自動同期します");
 }
 
 function mergeLearningPayload(payload){
@@ -1189,15 +1103,10 @@ function importLearningData(){
   }
 }
 
-function updateStats(){
-  var sessions=getData().sessions||[],wpms=sessions.map(function(s){return s.wpm||0}).filter(Boolean),best=wpms.length?Math.max.apply(null,wpms):0,last=wpms.length?wpms[wpms.length-1]:0,avg=wpms.length?Math.round(wpms.reduce(function(a,b){return a+b},0)/wpms.length):0;
-  text("totalSessions",sessions.length);
-  text("bestWpm",best);
-  text("lastWpm",last);
-  text("avgWpm",avg);
-  text("statBest",best);
-  text("statLast",last);
-  if(el("statSessions"))text("statSessions",sessions.length);
+function updateStats(){var sessions=getData().sessions||[],wpms=sessions.map(function(s){return s.wpm||0}).filter(Boolean),best=wpms.length?Math.max.apply(null,wpms):0,last=wpms.length?wpms[wpms.length-1]:0,avg=wpms.length?Math.round(wpms.reduce(function(a,b){return a+b},0)/wpms.length):0;text("totalSessions",sessions.length);text("bestWpm",best);text("lastWpm",last);text("avgWpm",avg);text("statBest",best);text("statLast",last)}
+function dayKey(date){
+  var d=new Date(date);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
 function shortDateLabel(key){
   return key.slice(5).replace("-","/");
@@ -1382,7 +1291,9 @@ function showCurrentCardList(){
 }
 
 function bindCloudButtons(){
-  window.saveCloud=saveCloud;window.loadCloud=loadCloud;window.testSync=testSync;
+  if(typeof saveCloud==="function")window.saveCloud=saveCloud;
+  if(typeof loadCloud==="function")window.loadCloud=loadCloud;
+  if(typeof testSync==="function")window.testSync=testSync;
   var sc=el("saveCloud"),lc=el("loadCloud"),ts=el("testSync");
   if(sc)sc.addEventListener("click",function(e){e.preventDefault();saveCloud()});
   if(lc)lc.addEventListener("click",function(e){e.preventDefault();loadCloud()});
@@ -1397,18 +1308,18 @@ el("makeAiPrompt").addEventListener("click",makeAiPrompt);
 el("copyAiPrompt").addEventListener("click",copyAiPrompt);
 el("openChatGPT").addEventListener("click",openChatGPT);
 el("clearAiPrompt").addEventListener("click",function(){text("aiPromptBox","ここにChatGPTへ貼るプロンプトが表示されます。")});
-el("pasteFromClipboard").addEventListener("click",pasteFromClipboard);el("chatgptResult").addEventListener("paste",function(){setTimeout(function(){if(val("chatgptResult").length>20){toast("貼り付けを検知しました。自動取り込みします。");importChatGPTResult();}},300)});
+el("pasteFromClipboard").addEventListener("click",pasteFromClipboard);el("chatgptResult").addEventListener("paste",function(){setTimeout(schedulePasteAutoImport,100)});el("chatgptResult").addEventListener("input",function(){if(val("chatgptResult").length>20){schedulePasteAutoImport()}});
 el("clearResultBox").addEventListener("click",function(){el("chatgptResult").value=""});
 el("importChatGPTResult").addEventListener("click",importChatGPTResult);
 el("clearChatGPTResult").addEventListener("click",function(){el("chatgptResult").value="";text("importStatus","クリアしました。")});
-el("voiceJa").addEventListener("click",function(){dictate("memo","ja-JP",false)});
+el("voiceJa").addEventListener("click",function(){dictate("memo","ja-JP",false,"memo")});
 el("focusMemo").addEventListener("click",function(){focusForKeyboard("memo")});
 el("stopVoice1").addEventListener("click",function(){stopDictation(false)});
 el("speakScript").addEventListener("click",function(){speak(val("scriptText"))});
 el("stopSpeak").addEventListener("click",function(){if("speechSynthesis" in window)speechSynthesis.cancel()});
 el("clearScript").addEventListener("click",function(){el("scriptText").value="";text("translation","");text("refinedJapanese","");html("phrases","");html("vocab","");currentPhraseItems=[];currentVocabItems=[]});
 el("makeShadow").addEventListener("click",makeShadow);
-el("speakShadowAll").addEventListener("click",speakShadowAll);el("repeatShadowAll").addEventListener("click",repeatShadowAll);el("repeatSelectedShadow").addEventListener("click",repeatSelectedShadow);el("stopShadowRepeat").addEventListener("click",stopShadowRepeat);
+el("speakShadowAll").addEventListener("click",function(){speak(el("shadowBlocks").innerText)});
 el("clearShadow").addEventListener("click",function(){text("shadowBlocks","")});el("voiceShadowEn").addEventListener("click",function(){dictate("shadowSpoken","en-US",true,"shadow")});el("focusShadowSpoken").addEventListener("click",function(){focusForKeyboard("shadowSpoken")});el("stopShadowVoice").addEventListener("click",function(){stopDictation(true)});el("clearShadowSpoken").addEventListener("click",function(){el("shadowSpoken").value=""});el("startShadowTimer").addEventListener("click",startShadowTimer);el("stopShadowTimer").addEventListener("click",stopShadowTimer);el("resetShadowTimer").addEventListener("click",resetShadowTimer);el("calcShadowWpm").addEventListener("click",function(){stopShadowTimer();calcShadowWpm()});
 el("voiceEn").addEventListener("click",function(){dictate("spoken","en-US",true,"conv")});
 el("focusSpoken").addEventListener("click",function(){focusForKeyboard("spoken")});
@@ -1428,7 +1339,7 @@ el("makeSavedQuiz").addEventListener("click",makeSavedQuiz);
 el("makeRandomSavedQuiz").addEventListener("click",makeRandomSavedQuiz);
 el("saveSettings").addEventListener("click",saveSettings);el("testSync").addEventListener("click",testSync);el("exportData").addEventListener("click",exportLearningData);el("copyExportData").addEventListener("click",copyExportData);el("importData").addEventListener("click",importLearningData);el("saveCloud").addEventListener("click",saveCloud);el("loadCloud").addEventListener("click",loadCloud);el("clearTransferBox").addEventListener("click",function(){el("dataTransferBox").value="";text("dataTransferStatus","クリアしました。")});
 el("clearData").addEventListener("click",function(){if(confirm("WPM履歴を削除しますか？")){var d=getData();d.sessions=[];saveData(d);drawChart()}});el("rangeAll").addEventListener("click",function(){setStatsRange("all")});el("rangeWeek").addEventListener("click",function(){setStatsRange("week")});el("rangeMonth").addEventListener("click",function(){setStatsRange("month")});
-bindCloudButtons();setupRateSlider();loadSaved();setTimeout(setupRateSlider,300);setTimeout(updateRateValue,600);updateRateValue();
+setupRateSlider();bindCloudButtons();loadSaved();setTimeout(setupRateSlider,300);setTimeout(updateRateValue,600);updateRateValue();
 });
 })();
 </script>
