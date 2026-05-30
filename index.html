@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v13</title>
+<title>Hiro English Coach Stable v14</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -243,8 +243,8 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v13</h1>
-<div class="sub">半自動版：自動クラウド同期 → 日付別Best WPM → 5WPM刻み読み上げ</div>
+<h1>Hiro English Coach Stable v14</h1>
+<div class="sub">半自動版：読み上げ速度表示修正 → 自動同期 → 日付別Best WPM</div>
 </header>
 
 <div class="wrap">
@@ -1064,7 +1064,7 @@ function saveSettings(){
   d.settings.autoSync=!!el("autoSync").checked;
   saveData(d);
   updateRateValue();
-  text("settingsStatus","設定を保存しました。読み上げ速度: "+el("rateValue").innerText+" WPM");
+  text("settingsStatus","設定を保存しました。読み上げ速度: "+(el("rateValue")?el("rateValue").innerText:"130")+" WPM");
 }
 
 function loadSaved(){
@@ -1089,8 +1089,23 @@ function loadSaved(){
     if(d.settings.syncPasscode)el("syncPasscode").value=d.settings.syncPasscode;
     if(d.settings.autoSync)el("autoSync").checked=true;
   }
-  updateStats();renderSavedPhrases();updateTimerDisplay();if(typeof updateShadowTimerDisplay==="function")updateShadowTimerDisplay();updateRateValue();
+  updateStats();
+  renderSavedPhrases();
+  updateTimerDisplay();
+  if(typeof updateShadowTimerDisplay==="function")updateShadowTimerDisplay();
+  updateRateValue();
   setTimeout(function(){var s=syncSettings();if(s.autoSync&&s.url&&s.userId&&s.passcode){autoLoadCloudOnStart()}},800);
+}
+
+
+function setupRateSlider(){
+  var slider = el("readWpm") || el("rate");
+  if(!slider)return;
+  slider.addEventListener("input", updateRateValue);
+  slider.addEventListener("change", updateRateValue);
+  slider.addEventListener("touchmove", updateRateValue, {passive:true});
+  slider.addEventListener("pointermove", updateRateValue);
+  updateRateValue();
 }
 
 document.addEventListener("DOMContentLoaded",function(){
@@ -1130,9 +1145,9 @@ el("unselectAllSaved").addEventListener("click",function(){setSavedSelection(fal
 el("deleteSelectedCards").addEventListener("click",deleteSelectedCards);
 el("makeSavedQuiz").addEventListener("click",makeSavedQuiz);
 el("makeRandomSavedQuiz").addEventListener("click",makeRandomSavedQuiz);
-el("saveSettings").addEventListener("click",saveSettings);el("testSync").addEventListener("click",testSync);el("readWpm").addEventListener("input",updateRateValue);el("exportData").addEventListener("click",exportLearningData);el("copyExportData").addEventListener("click",copyExportData);el("importData").addEventListener("click",importLearningData);el("saveCloud").addEventListener("click",saveCloud);el("loadCloud").addEventListener("click",loadCloud);el("clearTransferBox").addEventListener("click",function(){el("dataTransferBox").value="";text("dataTransferStatus","クリアしました。")});
+el("saveSettings").addEventListener("click",saveSettings);el("testSync").addEventListener("click",testSync);el("exportData").addEventListener("click",exportLearningData);el("copyExportData").addEventListener("click",copyExportData);el("importData").addEventListener("click",importLearningData);el("saveCloud").addEventListener("click",saveCloud);el("loadCloud").addEventListener("click",loadCloud);el("clearTransferBox").addEventListener("click",function(){el("dataTransferBox").value="";text("dataTransferStatus","クリアしました。")});
 el("clearData").addEventListener("click",function(){if(confirm("WPM履歴を削除しますか？")){var d=getData();d.sessions=[];saveData(d);drawChart()}});el("rangeAll").addEventListener("click",function(){setStatsRange("all")});el("rangeWeek").addEventListener("click",function(){setStatsRange("week")});el("rangeMonth").addEventListener("click",function(){setStatsRange("month")});
-loadSaved();updateRateValue();
+setupRateSlider();loadSaved();updateRateValue();
 });
 })();
 </script>
