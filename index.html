@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v9</title>
+<title>Hiro English Coach Stable v10</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -152,12 +152,23 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
   .desktopOnly{display:none}
 }
 
+
+.statsControls{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.statsControls button{width:auto}
+.statsControls button.activeRange{background:#2563eb;color:white}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;color:#dbeafe;font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:999px}
+.legend .convLine{background:#60a5fa}
+.legend .shadowLine{background:#34d399}
+.ratePreview{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:8px;text-align:center;font-size:22px;font-weight:900}
+
 </style>
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v9</h1>
-<div class="sub">半自動版：テスト優先表示 → 復習カード一括表示 → Shadow英文専用</div>
+<h1>Hiro English Coach Stable v10</h1>
+<div class="sub">半自動版：WPM週月表示 → Shadow WPM追加 → 読み上げ速度表示</div>
 </header>
 
 <div class="wrap">
@@ -238,6 +249,20 @@ Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて�
 <div id="shadowBlocks" class="out"></div>
 <button class="secondary" id="clearShadow">Shadowをクリア</button>
 </div>
+
+<div class="card">
+<h2>Shadow WPM</h2>
+<p class="small">シャドーイングした英文をここに入力，またはWeb音声入力してください。WPM履歴にはShadowとして記録されます。</p>
+<textarea id="shadowSpoken" placeholder="シャドーイングで話した英文を入力してください。"></textarea>
+<button class="secondary" id="clearShadowSpoken">Shadow音声入力欄をクリア</button>
+<div class="row"><button id="voiceShadowEn">🎙 Web音声入力＋WPM開始</button><button class="secondary" id="focusShadowSpoken">⌨️ iPhoneマイク入力</button><button class="secondary" id="stopShadowVoice">停止＋WPM計測</button></div>
+<h3>Shadow WPM測定</h3>
+<div class="timer" id="shadowTimerDisplay">00:00</div>
+<div class="row"><button id="startShadowTimer" class="good">開始</button><button id="stopShadowTimer" class="secondary">停止</button><button id="resetShadowTimer" class="secondary">リセット</button></div>
+<div class="row"><input id="shadowSeconds" type="number" value="60" min="1"><button id="calcShadowWpm" class="good">Shadow WPM計測</button></div>
+<div id="shadowWpmOut" class="out"></div>
+</div>
+
 </section>
 
 <section id="conv" class="screen">
@@ -265,7 +290,7 @@ Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて�
 <div class="card">
 <h2>今回の復習カード</h2>
 <button id="makeReview" class="good">今回のカード表示</button>
-<div class="row"><button id="showAllCurrentDetails" class="secondary">全て表示</button><button id="hideAllCurrentDetails" class="secondary">全て非表示</button></div>
+<div class="row"><button id="hideAllCurrentDetails" class="secondary">今回のカードすべて非表示</button></div>
 <div id="reviewCards"></div>
 <div class="row"><button id="saveSelectedCurrentPhrases" class="good">選択したカードを蓄積</button><button id="selectAllCurrent" class="secondary">今回分を全選択</button></div>
 </div>
@@ -306,7 +331,7 @@ Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて�
 <div><b id="statBest">0</b><span>Best</span></div>
 <div><b id="statLast">0</b><span>Last</span></div>
 </div>
-<canvas id="chart" width="900" height="260"></canvas>
+<div class="statsControls"><button id="rangeAll" class="secondary activeRange">全期間</button><button id="rangeWeek" class="secondary">週</button><button id="rangeMonth" class="secondary">月</button></div><div class="legend"><span><i class="convLine"></i>Conv. WPM</span><span><i class="shadowLine"></i>Shadow WPM</span></div><canvas id="chart" width="900" height="260"></canvas>
 <button class="secondary" id="clearData">WPM履歴削除</button>
 </div>
 </section>
@@ -314,10 +339,8 @@ Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて�
 <section id="settings" class="screen">
 <div class="card">
 <h2>設定</h2>
-<label class="small">読み上げ速度</label>
+<label class="small">読み上げ速度：<b id="rateValue">0.86</b>x</label>
 <input id="rate" type="range" min="0.6" max="1.2" step="0.05" value="0.86">
-<label class="small">目標WPM</label>
-<input id="targetWpm" type="number" value="110">
 <button id="saveSettings" class="good">保存</button>
 <div id="settingsStatus" class="out">設定を変更できます。</div>
 </div>
@@ -330,7 +353,7 @@ Tip: 単語を1つずつ読まず，意味のまとまりごとにつなげて�
 "use strict";
 if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister();});}).catch(function(){});}
 var storeKey="hiroEnglishCoach.stable.v5";
-var recognition=null, currentDictationTarget=null, timerStart=null, timerElapsed=0, timerInterval=null;
+var recognition=null, currentDictationTarget=null, currentDictationMode=null, timerStart=null, timerElapsed=0, timerInterval=null, shadowTimerStart=null, shadowTimerElapsed=0, shadowTimerInterval=null, statsRange="all";
 var currentPhraseItems=[], currentVocabItems=[];
 
 function el(id){return document.getElementById(id)}
@@ -517,8 +540,25 @@ function importChatGPTResult(){
 }
 
 function focusForKeyboard(id){el(id).focus();el(id).scrollIntoView({behavior:"smooth",block:"center"});toast("入力欄を開きました。iPhoneキーボードのマイクを押してください。")}
-function dictate(id,lang,withTimer){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast("Web音声認識が使えません。iPhoneキーボードのマイク入力を使ってください。");focusForKeyboard(id);return}stopDictation(false);var target=el(id),base=target.value?target.value+" ":"";currentDictationTarget=id;recognition=new SR();recognition.lang=lang;recognition.continuous=true;recognition.interimResults=true;recognition.onresult=function(e){var finalText="",interim="";for(var i=e.resultIndex;i<e.results.length;i++){var t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=t+" ";else interim+=t}if(finalText)base+=finalText;target.value=base+interim};recognition.onerror=function(e){toast("音声入力エラー: "+e.error+"。iPhoneキーボードのマイク入力を使ってください。");if(withTimer){stopTimer();calcWpm()}focusForKeyboard(id)};recognition.onend=function(){recognition=null;if(withTimer){stopTimer();calcWpm();toast("音声入力終了。WPMを計測しました")}};try{if(withTimer)startTimer();recognition.start();toast("Web音声入力を開始しました")}catch(e){if(withTimer)stopTimer();toast("音声入力を開始できませんでした");focusForKeyboard(id)}}
-function stopDictation(measure){if(recognition){try{recognition.onend=null;recognition.stop()}catch(e){}recognition=null;toast("音声入力を停止しました")}if(measure){stopTimer();calcWpm()}}
+function dictate(id,lang,withTimer,mode){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast("Web音声認識が使えません。iPhoneキーボードのマイク入力を使ってください。");focusForKeyboard(id);return}
+  stopDictation(false);
+  var target=el(id),base=target.value?target.value+" ":"";
+  currentDictationMode=mode||"conv";
+  recognition=new SR();recognition.lang=lang;recognition.continuous=true;recognition.interimResults=true;
+  recognition.onresult=function(e){var finalText="",interim="";for(var i=e.resultIndex;i<e.results.length;i++){var t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=t+" ";else interim+=t}if(finalText)base+=finalText;target.value=base+interim};
+  recognition.onerror=function(e){toast("音声入力エラー: "+e.error+"。iPhoneキーボードのマイク入力を使ってください。");if(withTimer){if(currentDictationMode==="shadow"){stopShadowTimer();calcShadowWpm()}else{stopTimer();calcWpm()}}focusForKeyboard(id)};
+  recognition.onend=function(){recognition=null;if(withTimer){if(currentDictationMode==="shadow"){stopShadowTimer();calcShadowWpm();toast("Shadow音声入力終了。WPMを計測しました")}else{stopTimer();calcWpm();toast("音声入力終了。WPMを計測しました")}}currentDictationMode=null};
+  try{if(withTimer){if(mode==="shadow")startShadowTimer();else startTimer()}recognition.start();toast("Web音声入力を開始しました")}catch(e){if(withTimer){if(mode==="shadow")stopShadowTimer();else stopTimer()}toast("音声入力を開始できませんでした");focusForKeyboard(id)}
+}
+
+function stopDictation(measure){
+  var mode=currentDictationMode;
+  if(recognition){try{recognition.onend=null;recognition.stop()}catch(e){}recognition=null;toast("音声入力を停止しました")}
+  if(measure){if(mode==="shadow"){stopShadowTimer();calcShadowWpm()}else{stopTimer();calcWpm()}}
+  currentDictationMode=null;
+}
 
 function speak(t){if(!t||!t.trim()){toast("読み上げる文章がありません");return}if(!("speechSynthesis" in window)){toast("このブラウザは読み上げに対応していません");return}speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=Number(el("rate").value||0.86);speechSynthesis.speak(u)}
 function makeShadow(){
@@ -541,16 +581,34 @@ function startTimer(){if(timerStart)return;timerStart=Date.now();timerInterval=s
 function stopTimer(){if(timerStart){timerElapsed+=Math.floor((Date.now()-timerStart)/1000);timerStart=null}if(timerInterval){clearInterval(timerInterval);timerInterval=null}updateTimerDisplay()}
 function resetTimer(){timerStart=null;timerElapsed=0;if(timerInterval){clearInterval(timerInterval);timerInterval=null}updateTimerDisplay();toast("WPMタイマーをリセットしました")}
 function calcWpm(){
-  var spoken=val("spoken");
-  var sec=Number(val("seconds")||getTimerSeconds()||60);
+  stopTimer();
+  var spoken=val("spoken"),sec=Number(val("seconds")||getTimerSeconds()||60);
   var words=countEnglishWords(spoken);
   var wpm=Math.round(words/sec*60),comment="";
   if(wpm<80)comment="ゆっくりでOK。まずは止まらず話すことを優先しましょう。";
   else if(wpm<110)comment="自然な練習ペースです。";
   else if(wpm<140)comment="かなり良いスピードです。";
   else comment="速いので，明瞭さも確認しましょう。";
-  text("wpmOut","Words: "+words+"\nTime: "+sec+" sec\nWPM: "+wpm+"\nComment: "+comment);
-  var d=getData();d.sessions.push({date:new Date().toISOString(),wpm:wpm,words:words,sec:sec,spoken:spoken});saveData(d);drawChart()
+  text("wpmOut","Words: "+words+"\nTime: "+sec+" sec\nWPM: "+wpm+"\nType: Conv.\nComment: "+comment);
+  var d=getData();d.sessions.push({date:new Date().toISOString(),type:"conv",wpm:wpm,words:words,sec:sec,spoken:spoken});saveData(d);drawChart()
+}
+
+function getShadowTimerSeconds(){var sec=shadowTimerElapsed;if(shadowTimerStart)sec+=Math.floor((Date.now()-shadowTimerStart)/1000);return sec}
+function updateShadowTimerDisplay(){var sec=getShadowTimerSeconds();if(el("shadowTimerDisplay"))text("shadowTimerDisplay",formatTime(sec));if(el("shadowSeconds"))el("shadowSeconds").value=Math.max(1,sec||1)}
+function startShadowTimer(){if(shadowTimerStart)return;shadowTimerStart=Date.now();shadowTimerInterval=setInterval(updateShadowTimerDisplay,500);updateShadowTimerDisplay();toast("Shadow WPMタイマーを開始しました")}
+function stopShadowTimer(){if(shadowTimerStart){shadowTimerElapsed+=Math.floor((Date.now()-shadowTimerStart)/1000);shadowTimerStart=null}if(shadowTimerInterval){clearInterval(shadowTimerInterval);shadowTimerInterval=null}updateShadowTimerDisplay()}
+function resetShadowTimer(){shadowTimerStart=null;shadowTimerElapsed=0;if(shadowTimerInterval){clearInterval(shadowTimerInterval);shadowTimerInterval=null}updateShadowTimerDisplay();toast("Shadow WPMタイマーをリセットしました")}
+function calcShadowWpm(){
+  stopShadowTimer();
+  var spoken=val("shadowSpoken"),sec=Number(val("shadowSeconds")||getShadowTimerSeconds()||60);
+  var words=countEnglishWords(spoken);
+  var wpm=Math.round(words/sec*60),comment="";
+  if(wpm<80)comment="ゆっくりでOK。まずは止まらず話すことを優先しましょう。";
+  else if(wpm<110)comment="自然な練習ペースです。";
+  else if(wpm<140)comment="かなり良いスピードです。";
+  else comment="速いので，明瞭さも確認しましょう。";
+  text("shadowWpmOut","Words: "+words+"\nTime: "+sec+" sec\nWPM: "+wpm+"\nType: Shadow\nComment: "+comment);
+  var d=getData();d.sessions.push({date:new Date().toISOString(),type:"shadow",wpm:wpm,words:words,sec:sec,spoken:spoken});saveData(d);drawChart()
 }
 
 function makeReview(){
@@ -680,14 +738,48 @@ function importLearningData(){
 }
 
 function updateStats(){var sessions=getData().sessions||[],wpms=sessions.map(function(s){return s.wpm||0}).filter(Boolean),best=wpms.length?Math.max.apply(null,wpms):0,last=wpms.length?wpms[wpms.length-1]:0,avg=wpms.length?Math.round(wpms.reduce(function(a,b){return a+b},0)/wpms.length):0;text("totalSessions",sessions.length);text("bestWpm",best);text("lastWpm",last);text("avgWpm",avg);text("statBest",best);text("statLast",last)}
-function drawChart(){var c=el("chart");if(!c)return;var ctx=c.getContext("2d"),sessions=(getData().sessions||[]).slice(-10);ctx.clearRect(0,0,c.width,c.height);ctx.strokeStyle="#334155";ctx.beginPath();ctx.moveTo(45,20);ctx.lineTo(45,220);ctx.lineTo(860,220);ctx.stroke();if(!sessions.length)return;var max=Math.max(120,Math.max.apply(null,sessions.map(function(s){return s.wpm||0})));ctx.strokeStyle="#60a5fa";ctx.lineWidth=3;ctx.beginPath();sessions.forEach(function(s,i){var x=60+i*(780/Math.max(1,sessions.length-1)),y=220-(s.wpm/max)*180;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);ctx.fillStyle="#fff";ctx.fillText(String(s.wpm),x-8,y-8)});ctx.stroke()}
-function saveSettings(){var d=getData();d.settings={rate:val("rate"),targetWpm:val("targetWpm")};saveData(d);text("settingsStatus","設定を保存しました。")}
-function loadSaved(){var d=getData();if(d.memo)el("memo").value=d.memo;if(d.script)el("scriptText").value=d.script;if(d.translation)text("translation",d.translation);if(d.refined)text("refinedJapanese",d.refined);if(d.currentPhraseItems){currentPhraseItems=d.currentPhraseItems;html("phrases",currentPhraseItems.map(function(p,i){return '<div class="itemCard"><b>'+(i+1)+'. '+esc(p.expression)+'</b><div class="jp">'+esc(p.meaning)+'</div><div class="ex">'+esc(p.example||"")+'</div></div>'}).join(""))}if(d.currentVocabItems){currentVocabItems=d.currentVocabItems;html("vocab",currentVocabItems.map(function(p,i){return '<div class="itemCard"><b>'+(i+1)+'. '+esc(p.expression)+'</b><div class="jp">'+esc(p.meaning)+'</div><div class="ex">'+esc(p.example||"")+'</div></div>'}).join(""))}if(d.settings){if(d.settings.rate)el("rate").value=d.settings.rate;if(d.settings.targetWpm)el("targetWpm").value=d.settings.targetWpm}updateStats();renderSavedPhrases();updateTimerDisplay()}
+function dateKey(date,range){
+  var d=new Date(date);
+  if(range==="week"){var tmp=new Date(d);var day=(tmp.getDay()+6)%7;tmp.setDate(tmp.getDate()-day);return tmp.getFullYear()+"-"+String(tmp.getMonth()+1).padStart(2,"0")+"-"+String(tmp.getDate()).padStart(2,"0")}
+  if(range==="month"){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
+  return String(d.getMonth()+1)+"/"+String(d.getDate())
+}
+function labelForKey(key,range){if(range==="week")return key.slice(5).replace("-","/")+"週";if(range==="month")return key.replace("-","/");return key}
+function setStatsRange(range){statsRange=range;document.querySelectorAll(".statsControls button").forEach(function(b){b.classList.remove("activeRange")});var id=range==="week"?"rangeWeek":range==="month"?"rangeMonth":"rangeAll";if(el(id))el(id).classList.add("activeRange");drawChart()}
+function aggregateSessions(sessions,range){
+  if(range==="all"){return sessions.slice(-12).map(function(s){return {key:dateKey(s.date,"all"),label:dateKey(s.date,"all"),type:s.type||"conv",wpm:s.wpm||0,date:s.date}})}
+  var map={};
+  sessions.forEach(function(s){var key=dateKey(s.date,range),type=s.type||"conv";map[key]=map[key]||{key:key,label:labelForKey(key,range),conv:[],shadow:[]};map[key][type==="shadow"?"shadow":"conv"].push(s.wpm||0)});
+  return Object.keys(map).sort().slice(-12).map(function(k){var row=map[k];row.convWpm=row.conv.length?Math.round(row.conv.reduce(function(a,b){return a+b},0)/row.conv.length):null;row.shadowWpm=row.shadow.length?Math.round(row.shadow.reduce(function(a,b){return a+b},0)/row.shadow.length):null;return row})
+}
+function drawChart(){
+  var c=el("chart");if(!c)return;var ctx=c.getContext("2d"),sessions=(getData().sessions||[]);
+  ctx.clearRect(0,0,c.width,c.height);ctx.strokeStyle="#334155";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(50,20);ctx.lineTo(50,220);ctx.lineTo(860,220);ctx.stroke();if(!sessions.length)return;
+  var data=aggregateSessions(sessions,statsRange),values=[];
+  data.forEach(function(r){if(statsRange==="all")values.push(r.wpm);else{if(r.convWpm!=null)values.push(r.convWpm);if(r.shadowWpm!=null)values.push(r.shadowWpm)}});
+  var max=Math.max(120,Math.max.apply(null,values));function xAt(i){return 65+i*(770/Math.max(1,data.length-1))}function yAt(v){return 220-(v/max)*180}
+  function drawSeries(type,color){
+    ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();var started=false;
+    data.forEach(function(r,i){var v=statsRange==="all"?(r.type===type?r.wpm:null):(type==="conv"?r.convWpm:r.shadowWpm);if(v==null){started=false;return}var x=xAt(i),y=yAt(v);if(!started){ctx.moveTo(x,y);started=true}else ctx.lineTo(x,y)});
+    ctx.stroke();
+    data.forEach(function(r,i){var v=statsRange==="all"?(r.type===type?r.wpm:null):(type==="conv"?r.convWpm:r.shadowWpm);if(v==null)return;var x=xAt(i),y=yAt(v);ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.fillStyle="#f8fafc";ctx.font="12px sans-serif";ctx.fillText(String(v),x-8,y-10)})
+  }
+  drawSeries("conv","#60a5fa");drawSeries("shadow","#34d399");
+  ctx.fillStyle="#a7b3c7";ctx.font="11px sans-serif";var step=Math.max(1,Math.ceil(data.length/6));
+  data.forEach(function(r,i){if(i%step!==0&&i!==data.length-1)return;var x=xAt(i),label=r.label;ctx.save();ctx.translate(x,238);ctx.rotate(-0.35);ctx.fillText(label,-12,0);ctx.restore()})
+}
+
+function saveSettings(){var d=getData();d.settings={rate:val("rate")};saveData(d);text("settingsStatus","設定を保存しました。読み上げ速度: "+val("rate")+"x");updateRateValue()}
+function loadSaved(){var d=getData();if(d.memo)el("memo").value=d.memo;if(d.script)el("scriptText").value=d.script;if(d.translation)text("translation",d.translation);if(d.refined)text("refinedJapanese",d.refined);if(d.currentPhraseItems){currentPhraseItems=d.currentPhraseItems;html("phrases",currentPhraseItems.map(function(p,i){return '<div class="itemCard"><b>'+(i+1)+'. '+esc(p.expression)+'</b><div class="jp">'+esc(p.meaning)+'</div><div class="ex">'+esc(p.example||"")+'</div></div>'}).join(""))}if(d.currentVocabItems){currentVocabItems=d.currentVocabItems;html("vocab",currentVocabItems.map(function(p,i){return '<div class="itemCard"><b>'+(i+1)+'. '+esc(p.expression)+'</b><div class="jp">'+esc(p.meaning)+'</div><div class="ex">'+esc(p.example||"")+'</div></div>'}).join(""))}if(d.settings){if(d.settings.rate)el("rate").value=d.settings.rate}updateStats();renderSavedPhrases();updateTimerDisplay();updateShadowTimerDisplay();updateRateValue()}
 
 function setAllCurrentDetails(show){
   document.querySelectorAll("#reviewCards .toggleBody").forEach(function(body){
     body.style.display = show ? "block" : "none";
   });
+}
+
+function updateRateValue(){
+  if(el("rateValue"))text("rateValue",String(Number(el("rate").value||0.86).toFixed(2)));
 }
 
 document.addEventListener("DOMContentLoaded",function(){
@@ -710,8 +802,8 @@ el("stopSpeak").addEventListener("click",function(){if("speechSynthesis" in wind
 el("clearScript").addEventListener("click",function(){el("scriptText").value="";text("translation","");text("refinedJapanese","");html("phrases","");html("vocab","");currentPhraseItems=[];currentVocabItems=[]});
 el("makeShadow").addEventListener("click",makeShadow);
 el("speakShadowAll").addEventListener("click",function(){speak(el("shadowBlocks").innerText)});
-el("clearShadow").addEventListener("click",function(){text("shadowBlocks","")});
-el("voiceEn").addEventListener("click",function(){dictate("spoken","en-US",true)});
+el("clearShadow").addEventListener("click",function(){text("shadowBlocks","")});el("voiceShadowEn").addEventListener("click",function(){dictate("shadowSpoken","en-US",true,"shadow")});el("focusShadowSpoken").addEventListener("click",function(){focusForKeyboard("shadowSpoken")});el("stopShadowVoice").addEventListener("click",function(){stopDictation(true)});el("clearShadowSpoken").addEventListener("click",function(){el("shadowSpoken").value=""});el("startShadowTimer").addEventListener("click",startShadowTimer);el("stopShadowTimer").addEventListener("click",stopShadowTimer);el("resetShadowTimer").addEventListener("click",resetShadowTimer);el("calcShadowWpm").addEventListener("click",function(){stopShadowTimer();calcShadowWpm()});
+el("voiceEn").addEventListener("click",function(){dictate("spoken","en-US",true,"conv")});
 el("focusSpoken").addEventListener("click",function(){focusForKeyboard("spoken")});
 el("stopVoice2").addEventListener("click",function(){stopDictation(true)});
 el("clearSpoken").addEventListener("click",function(){el("spoken").value=""});
@@ -721,15 +813,15 @@ el("resetTimer").addEventListener("click",resetTimer);
 el("calcWpm").addEventListener("click",function(){stopTimer();calcWpm()});
 el("makeReview").addEventListener("click",makeReview);
 el("saveSelectedCurrentPhrases").addEventListener("click",saveSelectedCurrentPhrases);
-el("selectAllCurrent").addEventListener("click",function(){setCurrentSelection(true)});el("showAllCurrentDetails").addEventListener("click",function(){setAllCurrentDetails(true)});el("hideAllCurrentDetails").addEventListener("click",function(){setAllCurrentDetails(false)});
+el("selectAllCurrent").addEventListener("click",function(){setCurrentSelection(true)});el("hideAllCurrentDetails").addEventListener("click",function(){setAllCurrentDetails(false)});
 el("selectAllSaved").addEventListener("click",function(){setSavedSelection(true)});
 el("unselectAllSaved").addEventListener("click",function(){setSavedSelection(false)});
 el("deleteSelectedCards").addEventListener("click",deleteSelectedCards);
 el("makeSavedQuiz").addEventListener("click",makeSavedQuiz);
 el("makeRandomSavedQuiz").addEventListener("click",makeRandomSavedQuiz);
-el("saveSettings").addEventListener("click",saveSettings);el("exportData").addEventListener("click",exportLearningData);el("copyExportData").addEventListener("click",copyExportData);el("importData").addEventListener("click",importLearningData);el("clearTransferBox").addEventListener("click",function(){el("dataTransferBox").value="";text("dataTransferStatus","クリアしました。")});
-el("clearData").addEventListener("click",function(){if(confirm("WPM履歴を削除しますか？")){var d=getData();d.sessions=[];saveData(d);drawChart()}});
-loadSaved();
+el("saveSettings").addEventListener("click",saveSettings);el("rate").addEventListener("input",updateRateValue);el("exportData").addEventListener("click",exportLearningData);el("copyExportData").addEventListener("click",copyExportData);el("importData").addEventListener("click",importLearningData);el("clearTransferBox").addEventListener("click",function(){el("dataTransferBox").value="";text("dataTransferStatus","クリアしました。")});
+el("clearData").addEventListener("click",function(){if(confirm("WPM履歴を削除しますか？")){var d=getData();d.sessions=[];saveData(d);drawChart()}});el("rangeAll").addEventListener("click",function(){setStatsRange("all")});el("rangeWeek").addEventListener("click",function(){setStatsRange("week")});el("rangeMonth").addEventListener("click",function(){setStatsRange("month")});
+loadSaved();updateRateValue();
 });
 })();
 </script>
