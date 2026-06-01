@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v30 SectionFix</title>
+<title>Hiro English Coach Stable v31 VocabFix</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -299,8 +299,8 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v30 SectionFix</h1>
-<div class="sub">Recovery版：セクション分離修正 → フレーズ表示修正</div>
+<h1>Hiro English Coach Stable v31 VocabFix</h1>
+<div class="sub">Recovery版：単語帳の英日分離修正</div>
 </header>
 
 <div class="wrap">
@@ -729,21 +729,89 @@ function parseLineItem(line){
   return {expression:s,meaning:"",example:""};
 }
 
-function renderPhraseList(txt){
-  currentPhraseItems=[];
-  var lines=String(txt||"").replace(/\r/g,"").split("\n").map(function(x){return x.trim()}).filter(Boolean);
 
-  lines.forEach(function(line){
-    if(/^\[[A-Z_]+\]$/.test(line))return;
-    if(/^(TOEIC_VOCABULARY|SHADOWING|CONVERSATION_QUESTIONS|MINI_QUIZ|JAPANESE_TRANSLATION|ENGLISH_SCRIPT)/i.test(line))return;
-    var item=parseLineItem(line);
-    if(item && item.expression){
-      item.id=item.id||String(Date.now())+"-"+Math.random().toString(36).slice(2);
-      item.correct=item.correct||0;
-      item.total=item.total||0;
-      currentPhraseItems.push(item);
-    }
+function parseStudyItems(txt){
+  var raw=String(txt||"").replace(/\r/g,"").split("\n").map(function(x){return x.trim()}).filter(Boolean);
+  var lines=raw.filter(function(line){
+    if(/^\[[A-Z_]+\]$/.test(line))return false;
+    if(/^(TOEIC_VOCABULARY|SHADOWING|CONVERSATION_QUESTIONS|MINI_QUIZ|JAPANESE_TRANSLATION|ENGLISH_SCRIPT|USEFUL_PHRASES)/i.test(line))return false;
+    return true;
   });
+
+  var items=[];
+  var i=0;
+
+  function isJapanese(s){return /[ぁ-んァ-ヶ一-龠]/.test(String(s||""))}
+  function isEnglish(s){return /[A-Za-z]/.test(String(s||"")) && !isJapanese(s)}
+  function isExampleLabel(s){return /^(Example|例文)\s*[:：]?$/i.test(String(s||"").trim())}
+
+  while(i<lines.length){
+    var line=lines[i].replace(/^[-・*]\s*/,"").replace(/^\d+[.)]\s*/,"").trim();
+    if(!line){i++;continue}
+
+    // Existing one-line format: expression - meaning - example
+    var delimited=parseLineItem(line);
+    var hasDelimiter=/\s*(?:--|—|–|-|：|:)\s*/.test(line);
+    if(hasDelimiter && delimited && delimited.expression && (delimited.meaning || delimited.example)){
+      delimited.id=String(Date.now())+"-"+Math.random().toString(36).slice(2);
+      delimited.correct=0;
+      delimited.total=0;
+      items.push(delimited);
+      i++;
+      continue;
+    }
+
+    // Multi-line format:
+    // speak confidently
+    // 自信を持って話す
+    // Example
+    // She speaks English confidently.
+    if(isEnglish(line)){
+      var expression=line;
+      var meaning="";
+      var example="";
+
+      if(i+1<lines.length && isJapanese(lines[i+1])){
+        meaning=lines[i+1].replace(/^[-・*]\s*/,"").replace(/^\d+[.)]\s*/,"").trim();
+        i+=2;
+      }else{
+        i++;
+      }
+
+      if(i<lines.length && isExampleLabel(lines[i])){
+        i++;
+        if(i<lines.length){
+          example=lines[i].replace(/^[-・*]\s*/,"").replace(/^\d+[.)]\s*/,"").trim();
+          i++;
+        }
+      }else if(i<lines.length && isEnglish(lines[i]) && /[.!?]$/.test(lines[i])){
+        example=lines[i].replace(/^[-・*]\s*/,"").replace(/^\d+[.)]\s*/,"").trim();
+        i++;
+      }
+
+      items.push({
+        id:String(Date.now())+"-"+Math.random().toString(36).slice(2),
+        expression:expression,
+        meaning:meaning,
+        example:example,
+        correct:0,
+        total:0
+      });
+      continue;
+    }
+
+    // If a Japanese line appears alone, attach it to previous item if possible.
+    if(isJapanese(line) && items.length && !items[items.length-1].meaning){
+      items[items.length-1].meaning=line;
+    }
+    i++;
+  }
+
+  return items;
+}
+
+function renderPhraseList(txt){
+  currentPhraseItems=parseStudyItems(txt);
 
   html("phrases",currentPhraseItems.map(function(p,i){
     return '<div class="studyCard">'
@@ -755,20 +823,7 @@ function renderPhraseList(txt){
 }
 
 function renderVocabList(txt){
-  currentVocabItems=[];
-  var lines=String(txt||"").replace(/\r/g,"").split("\n").map(function(x){return x.trim()}).filter(Boolean);
-
-  lines.forEach(function(line){
-    if(/^\[[A-Z_]+\]$/.test(line))return;
-    if(/^(SHADOWING|CONVERSATION_QUESTIONS|MINI_QUIZ|USEFUL_PHRASES|JAPANESE_TRANSLATION|ENGLISH_SCRIPT)/i.test(line))return;
-    var item=parseLineItem(line);
-    if(item && item.expression){
-      item.id=item.id||String(Date.now())+"-"+Math.random().toString(36).slice(2);
-      item.correct=item.correct||0;
-      item.total=item.total||0;
-      currentVocabItems.push(item);
-    }
-  });
+  currentVocabItems=parseStudyItems(txt);
 
   html("vocab",currentVocabItems.map(function(p,i){
     return '<div class="studyCard">'
