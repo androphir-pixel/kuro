@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v29 Recovery</title>
+<title>Hiro English Coach Stable v30 SectionFix</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -299,8 +299,8 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v29 Recovery</h1>
-<div class="sub">Recovery版：syncBusy未定義修正 → 取り込み安定化</div>
+<h1>Hiro English Coach Stable v30 SectionFix</h1>
+<div class="sub">Recovery版：セクション分離修正 → フレーズ表示修正</div>
 </header>
 
 <div class="wrap">
@@ -682,45 +682,69 @@ function importChatGPTResult(){
 
 function extractSection(src,name){
   src=String(src||"").replace(/\r/g,"");
+  var names=[
+    "JAPANESE_REFINED",
+    "ENGLISH_SCRIPT",
+    "JAPANESE_TRANSLATION",
+    "USEFUL_PHRASES",
+    "TOEIC_VOCABULARY",
+    "SHADOWING",
+    "CONVERSATION_QUESTIONS",
+    "MINI_QUIZ"
+  ];
+
   var startTag="["+name+"]";
   var idx=src.indexOf(startTag);
   if(idx<0)return "";
-  var rest=src.slice(idx+startTag.length);
-  var next=rest.search(/\n\[[A-Z_]+\]/);
-  if(next>=0)rest=rest.slice(0,next);
-  return rest.trim();
+
+  var start=idx+startTag.length;
+  var end=src.length;
+
+  names.forEach(function(n){
+    if(n===name)return;
+    var tag="["+n+"]";
+    var j=src.indexOf(tag,start);
+    if(j>=0 && j<end)end=j;
+  });
+
+  return src.slice(start,end).trim();
 }
 
 function parseLineItem(line){
-  var raw=String(line||"").trim();
-  raw=raw.replace(/^[-・*]\s*/,"").replace(/^\d+[.)]\s*/,"").trim();
-  if(isNoiseLine(raw))return null;
-  var parts=raw.split(/\s+-\s+|：|:|－|—/).map(function(x){return x.trim()}).filter(Boolean);
-  var expression=parts[0]||"";
-  var meaning=parts[1]||"";
-  var example=parts.slice(2).join(" - ")||"";
+  var s=String(line||"").trim();
+  if(!s)return null;
 
-  if(!meaning){
-    var m=raw.match(/^(.+?)\s*[（(](.+?)[）)]\s*(.*)$/);
-    if(m){expression=m[1].trim();meaning=m[2].trim();example=m[3].trim();}
+  s=s.replace(/^[-・*]\s*/,"").replace(/^\d+[.)]\s*/,"").trim();
+  if(!s || /^\[[A-Z_]+\]$/.test(s))return null;
+
+  var parts=s.split(/\s*(?:--|—|–|-|：|:)\s*/).map(function(x){return x.trim()}).filter(Boolean);
+
+  if(parts.length>=3){
+    return {expression:parts[0],meaning:parts[1],example:parts.slice(2).join(" - ")};
+  }
+  if(parts.length===2){
+    return {expression:parts[0],meaning:parts[1],example:""};
   }
 
-  if(!expression || expression.length<2)return null;
-  if(/^(例文|Example|Meaning|意味)\s*$/i.test(expression))return null;
-  if(!meaning && !example && expression.split(/\s+/).length<2 && !/[A-Za-z]/.test(expression))return null;
-
-  return {id:Date.now()+"-"+Math.random().toString(36).slice(2),expression:expression,meaning:meaning,example:example,correct:0,total:0,created:new Date().toISOString()}
+  return {expression:s,meaning:"",example:""};
 }
 
-function renderPhraseList(block){
-  var lines=String(block||"").split(/\n/).map(function(x){return x.trim()}).filter(Boolean);
-  currentPhraseItems=lines.map(parseLineItem).filter(Boolean).filter(function(p){
-    return p.expression && (p.meaning || p.example || p.expression.split(/\s+/).length>=2);
+function renderPhraseList(txt){
+  currentPhraseItems=[];
+  var lines=String(txt||"").replace(/\r/g,"").split("\n").map(function(x){return x.trim()}).filter(Boolean);
+
+  lines.forEach(function(line){
+    if(/^\[[A-Z_]+\]$/.test(line))return;
+    if(/^(TOEIC_VOCABULARY|SHADOWING|CONVERSATION_QUESTIONS|MINI_QUIZ|JAPANESE_TRANSLATION|ENGLISH_SCRIPT)/i.test(line))return;
+    var item=parseLineItem(line);
+    if(item && item.expression){
+      item.id=item.id||String(Date.now())+"-"+Math.random().toString(36).slice(2);
+      item.correct=item.correct||0;
+      item.total=item.total||0;
+      currentPhraseItems.push(item);
+    }
   });
-  if(!currentPhraseItems.length){
-    html("phrases",'<div class="out">Useful Phrasesは検出されませんでした。</div>');
-    return;
-  }
+
   html("phrases",currentPhraseItems.map(function(p,i){
     return '<div class="studyCard">'
       + '<div class="front">'+(i+1)+'. '+esc(p.expression)+'</div>'
@@ -730,15 +754,22 @@ function renderPhraseList(block){
   }).join(""));
 }
 
-function renderVocabList(block){
-  var lines=String(block||"").split(/\n/).map(function(x){return x.trim()}).filter(Boolean);
-  currentVocabItems=lines.map(parseLineItem).filter(Boolean).filter(function(p){
-    return p.expression && (p.meaning || p.example);
+function renderVocabList(txt){
+  currentVocabItems=[];
+  var lines=String(txt||"").replace(/\r/g,"").split("\n").map(function(x){return x.trim()}).filter(Boolean);
+
+  lines.forEach(function(line){
+    if(/^\[[A-Z_]+\]$/.test(line))return;
+    if(/^(SHADOWING|CONVERSATION_QUESTIONS|MINI_QUIZ|USEFUL_PHRASES|JAPANESE_TRANSLATION|ENGLISH_SCRIPT)/i.test(line))return;
+    var item=parseLineItem(line);
+    if(item && item.expression){
+      item.id=item.id||String(Date.now())+"-"+Math.random().toString(36).slice(2);
+      item.correct=item.correct||0;
+      item.total=item.total||0;
+      currentVocabItems.push(item);
+    }
   });
-  if(!currentVocabItems.length){
-    html("vocab",'<div class="out">TOEIC Vocabularyは検出されませんでした。</div>');
-    return;
-  }
+
   html("vocab",currentVocabItems.map(function(p,i){
     return '<div class="studyCard">'
       + '<div class="front">'+(i+1)+'. '+esc(p.expression)+'</div>'
