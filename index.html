@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v35 SaveToDashboard</title>
+<title>Hiro English Coach Stable v36 TitlePrompt</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -335,8 +335,8 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v35 SaveToDashboard</h1>
-<div class="sub">Recovery版：Dashboard保存ボタン追加</div>
+<h1>Hiro English Coach Stable v36 TitlePrompt</h1>
+<div class="sub">Recovery版：保存タイトル自動生成プロンプト追加</div>
 </header>
 
 <div class="wrap">
@@ -594,6 +594,7 @@ function makeAiPrompt(){
 "あとで別アプリに貼り戻すため，必ず指定した見出しタグを使って出力してください。\n\n"+
 "【日本語メモ】\n"+memo+"\n\n"+
 "以下の形式で出力してください。見出しタグは変更しないでください。\n\n"+
+"[TITLE]\n保存用タイトルを日本語で1行だけ作ってください。日付は入れないでください。内容がすぐ分かる自然なタイトルにしてください。例：子どもと過ごした休日，台風の日の在宅勤務，英語学習を再開した日。\n\n"+
 "[JAPANESE_REFINED]\n日本語メモを自然で分かりやすい話し言葉に整理してください。結論→理由→具体例→まとめの順にしてください。\n\n"+
 "[ENGLISH_SCRIPT]\nTOEIC700程度の学習者が1分で話せる自然な英語スクリプトを作ってください。難しすぎる表現は避けてください。\n\n"+
 "[JAPANESE_TRANSLATION]\n英語スクリプトの自然な日本語訳を書いてください。\n\n"+
@@ -679,8 +680,9 @@ function importChatGPTResult(){
     return;
   }
 
-  var refined="",script="",translation="",phrases="",vocab="",questions="",quiz="";
+  var title="",refined="",script="",translation="",phrases="",vocab="",questions="",quiz="";
   try{
+    title=extractSection(src,"TITLE");
     refined=extractSection(src,"JAPANESE_REFINED");
     script=extractSection(src,"ENGLISH_SCRIPT");
     translation=extractSection(src,"JAPANESE_TRANSLATION");
@@ -724,6 +726,7 @@ function importChatGPTResult(){
   d.currentPhraseItems=currentPhraseItems;
   d.currentVocabItems=currentVocabItems;
   d.chatgptResult=src;
+  d.lastScriptTitle=title||"";
   saveData(d);
 
   text("importStatus","取り込み完了。Scriptへ移動しました。Shadowブロックも自動分割済みです。");
@@ -740,6 +743,7 @@ function importChatGPTResult(){
 function extractSection(src,name){
   src=String(src||"").replace(/\r/g,"");
   var names=[
+    "TITLE",
     "JAPANESE_REFINED",
     "ENGLISH_SCRIPT",
     "JAPANESE_TRANSLATION",
@@ -1829,6 +1833,15 @@ function bindCloudButtons(){
 }
 
 
+
+function cleanAutoTitle(t){
+  var s=String(t||"").trim();
+  s=s.replace(/^[-・*]\s*/,"").replace(/^["'「『]|["'」』]$/g,"").trim();
+  s=s.replace(/\s+/g," ");
+  if(s.length>32)s=s.slice(0,32);
+  return s;
+}
+
 function quickSaveScriptArchive(){
   var script = val("scriptText");
   var translation = el("translation") ? el("translation").innerText : "";
@@ -1838,11 +1851,14 @@ function quickSaveScriptArchive(){
   }
 
   var now = new Date();
-  var title = now.getFullYear()+"/"+String(now.getMonth()+1).padStart(2,"0")+"/"+String(now.getDate()).padStart(2,"0")+" ";
-  var first = script.split(/[.!?\n]/).map(function(x){return x.trim()}).filter(Boolean)[0] || "English practice";
-  title += first.replace(/\s+/g," ").slice(0,36);
-
   var d = getData();
+  var titleText = cleanAutoTitle(d.lastScriptTitle || "");
+  if(!titleText){
+    var first = script.split(/[.!?\n]/).map(function(x){return x.trim()}).filter(Boolean)[0] || "English practice";
+    titleText = first.replace(/\s+/g," ").slice(0,36);
+  }
+  var title = now.getFullYear()+"/"+String(now.getMonth()+1).padStart(2,"0")+"/"+String(now.getDate()).padStart(2,"0")+" "+titleText;
+
   d.scriptArchive = d.scriptArchive || [];
   d.scriptArchive.unshift({
     id:String(Date.now())+"-"+Math.random().toString(36).slice(2),
