@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v36 TitlePrompt</title>
+<title>Hiro English Coach Stable v38 ScriptSaveCloud</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -331,12 +331,38 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
   }
 }
 
+
+/* v37 dashboard header link */
+header{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+}
+.headerMain{min-width:0}
+.homeLink{
+  color:white;
+  text-decoration:none;
+  border:1px solid var(--line);
+  padding:10px 14px;
+  border-radius:999px;
+  background:#0b1220;
+  font-weight:800;
+  white-space:nowrap;
+}
+@media(max-width:640px){
+  header{align-items:flex-start;flex-direction:column}
+}
+
 </style>
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v36 TitlePrompt</h1>
-<div class="sub">Recovery版：保存タイトル自動生成プロンプト追加</div>
+<div class="headerMain">
+<h1>Hiro English Coach Stable v38 ScriptSaveCloud</h1>
+<div class="sub">Recovery版：Script保存＋クラウド同期</div>
+</div>
+<a class="homeLink" href="./dashboard.html">Dashboardを開く</a>
 </header>
 
 <div class="wrap">
@@ -402,7 +428,7 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 <div id="refinedJapanese" class="out"></div>
 
 <div class="row" style="margin:10px 0;">
-  <button id="quickSaveScriptArchive" class="good">Dashboard用にこのScriptを保存</button>
+  <button id="quickSaveScriptArchive" class="good">Scriptを保存＋クラウド同期</button>
 </div>
 
 <h3>English Script</h3>
@@ -1842,7 +1868,18 @@ function cleanAutoTitle(t){
   return s;
 }
 
-function quickSaveScriptArchive(){
+
+function canUseCloudSync(){
+  try{
+    var d=getData();
+    var st=d.settings||{};
+    return !!(st.syncWorkerUrl && st.syncUserId && st.syncPasscode);
+  }catch(e){
+    return false;
+  }
+}
+
+async function quickSaveScriptArchive(){
   var script = val("scriptText");
   var translation = el("translation") ? el("translation").innerText : "";
   if(!script || !script.trim()){
@@ -1875,8 +1912,21 @@ function quickSaveScriptArchive(){
     try{renderScriptArchive()}catch(e){}
   }
 
-  toast("Dashboard用に保存しました");
+  if(canUseCloudSync() && typeof saveCloud === "function"){
+    try{
+      toast("Scriptを保存しました。クラウド同期中です。");
+      await saveCloud();
+      toast("Scriptを保存し，クラウド同期しました");
+    }catch(e){
+      toast("端末内に保存しました。クラウド同期は失敗しました。");
+      if(el("cloudStatus"))text("cloudStatus","Scriptは端末内に保存済み。クラウド同期失敗: "+(e.message||e));
+    }
+  }else{
+    toast("Scriptを端末内に保存しました。クラウド同期は未設定です。");
+    if(el("cloudStatus"))text("cloudStatus","Scriptは端末内に保存済み。クラウド同期するにはSettingsで設定後，クラウドへ保存してください。");
+  }
 }
+
 
 document.addEventListener("DOMContentLoaded",function(){
 document.querySelectorAll(".tab").forEach(function(b){b.addEventListener("click",function(){showTab(b.dataset.target)})});
