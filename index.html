@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v31 VocabFix</title>
+<title>Hiro English Coach Stable v33 UI</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -295,12 +295,48 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 .shadowControls button{width:auto}
 @media(max-width:640px){.shadowControls button{width:100%}}
 
+
+.archiveBox{margin-top:14px;background:#0b1220;border:1px solid #334155;border-radius:16px;padding:12px}
+.archiveItem{background:#111827;border:1px solid #334155;border-radius:14px;padding:12px;margin:10px 0}
+.archiveHead{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.archiveTitle{font-size:16px;font-weight:900;color:#f8fafc}.archiveDate{font-size:12px;color:#93c5fd}
+.archivePreview{margin-top:8px;color:#cbd5e1;font-size:13px;line-height:1.5}
+.archiveBody{margin-top:10px;white-space:pre-wrap;background:#020617;border:1px solid #334155;border-radius:12px;padding:10px;line-height:1.6}
+.archiveActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.archiveActions button{width:auto}
+@media(max-width:640px){.archiveActions button{width:100%}}
+
+
+/* v33 UI-only height adjustment */
+#refinedJapanese{
+  max-height:220px;
+  overflow:auto;
+}
+#scriptText{
+  min-height:420px;
+}
+#translation{
+  min-height:360px;
+  max-height:none;
+  overflow:visible;
+}
+@media(max-width:640px){
+  #refinedJapanese{
+    max-height:230px;
+  }
+  #scriptText{
+    min-height:520px;
+  }
+  #translation{
+    min-height:480px;
+  }
+}
+
 </style>
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v31 VocabFix</h1>
-<div class="sub">Recovery版：単語帳の英日分離修正</div>
+<h1>Hiro English Coach Stable v33 UI</h1>
+<div class="sub">Recovery版：Script表示高さ調整</div>
 </header>
 
 <div class="wrap">
@@ -368,6 +404,21 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 <textarea id="scriptText" placeholder="ここに英語スクリプトが入ります。"></textarea>
 <h3>Japanese Translation</h3>
 <div id="translation" class="out"></div>
+
+<div class="archiveBox">
+  <h3>保存箱（英文＋日本語訳）</h3>
+  <p class="small">作成したEnglish ScriptとJapanese Translationを，日付・タイトル付きで保存できます。</p>
+  <label class="small">保存タイトル</label>
+  <input id="archiveTitle" placeholder="例：2026/06/03 子どもと過ごした休日">
+  <div class="row">
+    <button id="saveScriptArchive" class="good">このスクリプトを保存</button>
+    <button id="clearArchiveTitle" class="secondary">タイトルをクリア</button>
+  </div>
+  <div id="archiveStatus" class="out">保存したスクリプトはここから見直せます。</div>
+  <h3>保存済みスクリプト</h3>
+  <div id="scriptArchiveList"></div>
+</div>
+
 <h3>Useful Phrases</h3>
 <div id="phrases"></div>
 <h3>TOEIC Vocabulary</h3>
@@ -1275,6 +1326,13 @@ function mergeLearningPayload(payload){
   incomingSessions.forEach(function(s){var k=(s.date||"")+"|"+(s.type||"conv")+"|"+(s.wpm||0)+"|"+(s.words||0);if(!sessionMap[k])sessionMap[k]=s});
   d.savedPhrases=Object.keys(cardMap).map(function(k){return cardMap[k]});
   d.sessions=Object.keys(sessionMap).map(function(k){return sessionMap[k]}).sort(function(a,b){return new Date(a.date)-new Date(b.date)});
+  
+  var incomingArchive=Array.isArray(payload.scriptArchive)?payload.scriptArchive:[];
+  var archiveMap={};
+  (d.scriptArchive||[]).forEach(function(a){if(!a.id)a.id=Date.now()+"-"+Math.random().toString(36).slice(2);archiveMap[a.id]=a});
+  incomingArchive.forEach(function(a){if(!a.id)a.id=Date.now()+"-"+Math.random().toString(36).slice(2);if(!archiveMap[a.id])archiveMap[a.id]=a});
+  d.scriptArchive=Object.keys(archiveMap).map(function(k){return archiveMap[k]}).sort(function(a,b){return new Date(b.date)-new Date(a.date)});
+
   saveData(d);
 }
 
@@ -1359,6 +1417,7 @@ function getLearningPayload(){
     savedAt:new Date().toISOString(),
     savedPhrases:d.savedPhrases||[],
     sessions:d.sessions||[],
+    scriptArchive:d.scriptArchive||[],
     script:d.script||"",
     refined:d.refined||"",
     translation:d.translation||""
@@ -1577,6 +1636,92 @@ function saveSettings(){
   text("settingsStatus","設定を保存しました。読み上げ速度: "+(document.getElementById("rateValue")?document.getElementById("rateValue").textContent:"130")+" WPM");
 }
 
+
+function autoArchiveTitle(){
+  var now=new Date();
+  var yyyy=now.getFullYear(), mm=String(now.getMonth()+1).padStart(2,"0"), dd=String(now.getDate()).padStart(2,"0");
+  var script=val("scriptText")||"";
+  var first=(script.split(/[.!?\n]/).map(function(x){return x.trim()}).filter(Boolean)[0]||"English practice");
+  return yyyy+"/"+mm+"/"+dd+" "+first.replace(/\s+/g," ").slice(0,36);
+}
+
+function saveScriptArchive(){
+  var script=val("scriptText");
+  var translation=el("translation")?el("translation").innerText:"";
+  if(!script || !script.trim()){
+    toast("保存するEnglish Scriptがありません");
+    text("archiveStatus","保存するEnglish Scriptがありません。");
+    return;
+  }
+  var d=getData();
+  d.scriptArchive=d.scriptArchive||[];
+  var title=val("archiveTitle") || autoArchiveTitle();
+  var item={
+    id:String(Date.now())+"-"+Math.random().toString(36).slice(2),
+    title:title,
+    date:new Date().toISOString(),
+    script:script,
+    translation:translation||"",
+    memo:val("memo")||""
+  };
+  d.scriptArchive.unshift(item);
+  saveData(d);
+  if(el("archiveTitle"))el("archiveTitle").value="";
+  text("archiveStatus","保存しました: "+title);
+  toast("英文と日本語訳を保存しました");
+  renderScriptArchive();
+}
+
+function renderScriptArchive(){
+  var d=getData(), list=d.scriptArchive||[], box=el("scriptArchiveList");
+  if(!box)return;
+  if(!list.length){
+    html("scriptArchiveList",'<div class="out">保存済みスクリプトはまだありません。</div>');
+    return;
+  }
+  html("scriptArchiveList",list.map(function(item){
+    var dt=new Date(item.date);
+    var dateText=isNaN(dt.getTime())?"日付不明":dt.getFullYear()+"/"+String(dt.getMonth()+1).padStart(2,"0")+"/"+String(dt.getDate()).padStart(2,"0");
+    var preview=(item.script||"").replace(/\s+/g," ").slice(0,120);
+    return '<div class="archiveItem" data-id="'+esc(item.id)+'">'
+      + '<div class="archiveHead"><div><div class="archiveTitle">'+esc(item.title||"Untitled")+'</div><div class="archiveDate">'+esc(dateText)+'</div></div></div>'
+      + '<div class="archivePreview">'+esc(preview)+(preview.length>=120?'...':'')+'</div>'
+      + '<div class="archiveActions">'
+      + '<button class="secondary openArchiveItem" data-id="'+esc(item.id)+'">表示/非表示</button>'
+      + '<button class="secondary restoreArchiveItem" data-id="'+esc(item.id)+'">Scriptに戻す</button>'
+      + '<button class="danger deleteArchiveItem" data-id="'+esc(item.id)+'">削除</button>'
+      + '</div>'
+      + '<div class="archiveBody" id="archiveBody-'+esc(item.id)+'" style="display:none;"><b>English Script</b><br>'+esc(item.script||"")+'<br><br><b>Japanese Translation</b><br>'+esc(item.translation||"")+'</div>'
+      + '</div>';
+  }).join(""));
+  document.querySelectorAll(".openArchiveItem").forEach(function(btn){
+    btn.addEventListener("click",function(){
+      var body=el("archiveBody-"+btn.dataset.id);
+      if(body)body.style.display=body.style.display==="none"?"block":"none";
+    });
+  });
+  document.querySelectorAll(".restoreArchiveItem").forEach(function(btn){
+    btn.addEventListener("click",function(){
+      var item=(getData().scriptArchive||[]).find(function(x){return x.id===btn.dataset.id});
+      if(!item)return;
+      if(el("scriptText"))el("scriptText").value=item.script||"";
+      if(el("translation"))text("translation",item.translation||"");
+      if(typeof makeShadowFromScript==="function")makeShadowFromScript(item.script||"");
+      toast("保存済みスクリプトをScriptへ戻しました");
+      showTab("scriptTab");
+    });
+  });
+  document.querySelectorAll(".deleteArchiveItem").forEach(function(btn){
+    btn.addEventListener("click",function(){
+      var d=getData();
+      d.scriptArchive=(d.scriptArchive||[]).filter(function(x){return x.id!==btn.dataset.id});
+      saveData(d);
+      renderScriptArchive();
+      toast("保存済みスクリプトを削除しました");
+    });
+  });
+}
+
 function loadSaved(){
   var d=getData();
   if(d.memo)el("memo").value=d.memo;
@@ -1606,6 +1751,8 @@ function loadSaved(){
   updateRateValue();
   if(d.script){makeShadowFromScript(d.script)}
   setTimeout(function(){var s=syncSettings();if(s.autoSync&&s.url&&s.userId&&s.passcode){autoLoadCloudOnStart()}},800);
+
+  try{renderScriptArchive()}catch(e){}
 }
 
 
@@ -1719,6 +1866,8 @@ safeOn("pasteFromClipboard","click",function(e){if(e)e.preventDefault();pasteFro
 safeOn("importResult","click",function(e){if(e)e.preventDefault();runChatGPTImport("manual")});
 safeOn("chatgptResult","paste",function(){lastImportedText="";setTimeout(function(){runChatGPTImport("paste")},120)});
 safeOn("chatgptResult","input",function(){var t=val("chatgptResult");if(t&&t.length>20){setTimeout(function(){runChatGPTImport("input")},350)}});
+safeOn("saveScriptArchive","click",function(){saveScriptArchive()});
+safeOn("clearArchiveTitle","click",function(){if(el("archiveTitle"))el("archiveTitle").value=""});
 loadSaved();setTimeout(setupRateSlider,300);setTimeout(updateRateValue,600);updateRateValue();
 });
 })();

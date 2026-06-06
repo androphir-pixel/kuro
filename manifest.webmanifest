@@ -1,7 +1,7 @@
 {
-  "name": "Hiro English Coach Stable v30 SectionFix",
+  "name": "Hiro English Coach Stable v33 UI",
   "short_name": "English Coach",
-  "start_url": "./index.html?v=stable-v30",
+  "start_url": "./index.html?v=stable-v33",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
