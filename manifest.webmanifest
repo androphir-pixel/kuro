@@ -1,7 +1,7 @@
 {
-  "name": "Hiro English Coach Stable v33 UI",
+  "name": "Hiro English Coach Stable v35 SaveToDashboard",
   "short_name": "English Coach",
-  "start_url": "./index.html?v=stable-v33",
+  "start_url": "./index.html?v=stable-v35",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",

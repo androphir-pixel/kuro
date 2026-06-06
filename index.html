@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hiro English Coach Stable v33 UI</title>
+<title>Hiro English Coach Stable v35 SaveToDashboard</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0f172a;--card:#182235;--ink:#f8fafc;--muted:#a7b3c7;--line:#334155;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#f59e0b;--paste:#1e3a8a}
@@ -335,8 +335,8 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 </head>
 <body>
 <header>
-<h1>Hiro English Coach Stable v33 UI</h1>
-<div class="sub">Recovery版：Script表示高さ調整</div>
+<h1>Hiro English Coach Stable v35 SaveToDashboard</h1>
+<div class="sub">Recovery版：Dashboard保存ボタン追加</div>
 </header>
 
 <div class="wrap">
@@ -356,6 +356,7 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 <div class="card cardPaste">
 <h2 class="highlightTitle">ChatGPT結果の貼り戻し</h2>
 <p class="small">ショートカットやChatGPTで作成した回答をここに貼り付けてください。貼り付け後は自動で取り込み，Script画面へ移動します。</p>
+<a href="./dashboard.html" class="secondary" style="display:inline-block;text-decoration:none;margin-top:8px;padding:10px 14px;border-radius:14px;">Dashboardを開く</a>
 <div class="row"><button class="good" id="pasteFromClipboard">クリップボード貼付＋自動取込</button><button class="secondary" id="clearResultBox">貼り戻し欄をクリア</button></div>
 <textarea id="chatgptResult" placeholder="ChatGPTの回答をここに貼り付けてください。"></textarea>
 <div class="row"><button class="good" id="importChatGPTResult">結果をアプリに取り込む</button><button class="secondary" id="clearChatGPTResult">クリア</button></div>
@@ -399,6 +400,11 @@ canvas{width:100%;height:210px;background:#0b1220;border:1px solid var(--line);b
 <button class="secondary" id="clearScript">Scriptをクリア</button>
 <h3>AI整理後の日本語</h3>
 <div id="refinedJapanese" class="out"></div>
+
+<div class="row" style="margin:10px 0;">
+  <button id="quickSaveScriptArchive" class="good">Dashboard用にこのScriptを保存</button>
+</div>
+
 <h3>English Script</h3>
 
 <textarea id="scriptText" placeholder="ここに英語スクリプトが入ります。"></textarea>
@@ -1822,6 +1828,40 @@ function bindCloudButtons(){
   if(ts){ts.onclick=function(e){if(e)e.preventDefault();testSync();return false;};}
 }
 
+
+function quickSaveScriptArchive(){
+  var script = val("scriptText");
+  var translation = el("translation") ? el("translation").innerText : "";
+  if(!script || !script.trim()){
+    toast("保存するEnglish Scriptがありません");
+    return;
+  }
+
+  var now = new Date();
+  var title = now.getFullYear()+"/"+String(now.getMonth()+1).padStart(2,"0")+"/"+String(now.getDate()).padStart(2,"0")+" ";
+  var first = script.split(/[.!?\n]/).map(function(x){return x.trim()}).filter(Boolean)[0] || "English practice";
+  title += first.replace(/\s+/g," ").slice(0,36);
+
+  var d = getData();
+  d.scriptArchive = d.scriptArchive || [];
+  d.scriptArchive.unshift({
+    id:String(Date.now())+"-"+Math.random().toString(36).slice(2),
+    title:title,
+    date:now.toISOString(),
+    script:script,
+    translation:translation || "",
+    memo:val("memo") || ""
+  });
+
+  saveData(d);
+
+  if(typeof renderScriptArchive === "function"){
+    try{renderScriptArchive()}catch(e){}
+  }
+
+  toast("Dashboard用に保存しました");
+}
+
 document.addEventListener("DOMContentLoaded",function(){
 document.querySelectorAll(".tab").forEach(function(b){b.addEventListener("click",function(){showTab(b.dataset.target)})});
 el("clearMemo").addEventListener("click",function(){el("memo").value=""});
@@ -1868,6 +1908,13 @@ safeOn("chatgptResult","paste",function(){lastImportedText="";setTimeout(functio
 safeOn("chatgptResult","input",function(){var t=val("chatgptResult");if(t&&t.length>20){setTimeout(function(){runChatGPTImport("input")},350)}});
 safeOn("saveScriptArchive","click",function(){saveScriptArchive()});
 safeOn("clearArchiveTitle","click",function(){if(el("archiveTitle"))el("archiveTitle").value=""});
+
+if(typeof safeOn==="function"){
+  safeOn("quickSaveScriptArchive","click",function(){quickSaveScriptArchive()});
+}else if(el("quickSaveScriptArchive")){
+  el("quickSaveScriptArchive").addEventListener("click",function(){quickSaveScriptArchive()});
+}
+
 loadSaved();setTimeout(setupRateSlider,300);setTimeout(updateRateValue,600);updateRateValue();
 });
 })();
