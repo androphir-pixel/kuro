@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>Hiro English Coach Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Hiro English Dashboard</h1>
+    <p>Daily Review / Feedback Log / Weekly Report / Theme Ideas / Search & Tags</p>
+  </div>
+  <a class="homeLink" href="./index.html">本体へ戻る</a>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-target="overview">Overview</button>
+  <button class="tab" data-target="daily">Daily Review</button>
+  <button class="tab" data-target="feedback">Feedback Log</button>
+  <button class="tab" data-target="weekly">Weekly</button>
+  <button class="tab" data-target="themes">Themes</button>
+  <button class="tab" data-target="search">Search</button>
+  <button class="tab" data-target="settings">Settings</button>
+</nav>
+
+<main>
+  <section id="overview" class="screen active">
+    <div class="grid">
+      <div class="card">
+        <h2>今日の状況</h2>
+        <div class="metric">
+          <div><b id="todayScripts">0</b><span>Scripts</span></div>
+          <div><b id="todaySessions">0</b><span>WPM Logs</span></div>
+          <div><b id="todayBest">0</b><span>Best WPM</span></div>
+        </div>
+        <div id="todaySummary" class="out"></div>
+      </div>
+
+      <div class="card">
+        <h2>今週の状況</h2>
+        <div class="metric">
+          <div><b id="weekScripts">0</b><span>Scripts</span></div>
+          <div><b id="weekSessions">0</b><span>Sessions</span></div>
+          <div><b id="weekBest">0</b><span>Best WPM</span></div>
+        </div>
+        <div id="weekSummary" class="out"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>次にやること</h2>
+      <div id="nextActions" class="list"></div>
+    </div>
+  </section>
+
+  <section id="daily" class="screen">
+    <div class="card">
+      <h2>Daily Review</h2>
+      <p class="small">今日作成・保存した英文，日本語訳，WPM，復習候補をまとめて確認します。</p>
+      <div id="dailyReview"></div>
+    </div>
+  </section>
+
+  <section id="feedback" class="screen">
+    <div class="grid">
+      <div class="card">
+        <h2>Speaking Feedback Log</h2>
+        <p class="small">ChatGPTなどで添削した結果や，自分の気づきを保存します。既存アプリ本体のデータは書き換えません。</p>
+
+        <label>テーマ</label>
+        <input id="fbTheme" placeholder="例：台風と在宅勤務">
+
+        <label>自分が話した英語</label>
+        <textarea id="fbOriginal" placeholder="自分が話した英文を貼り付け"></textarea>
+
+        <label>自然な修正版</label>
+        <textarea id="fbCorrected" placeholder="ChatGPTで添削した英文など"></textarea>
+
+        <label>次回意識するポイント</label>
+        <textarea id="fbPoint" placeholder="例：because の後を短くまとめる"></textarea>
+
+        <label>タグ</label>
+        <input id="fbTags" placeholder="例：仕事, 天気, 英語学習">
+
+        <button id="saveFeedback" class="good">Feedbackを保存</button>
+        <div id="feedbackStatus" class="out">保存したFeedbackは下に表示されます。</div>
+      </div>
+
+      <div class="card">
+        <h2>Feedback一覧</h2>
+        <input id="feedbackSearch" placeholder="Feedbackを検索">
+        <div id="feedbackList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="weekly" class="screen">
+    <div class="card">
+      <h2>Weekly Report</h2>
+      <p class="small">直近7日間の学習状況を集計します。</p>
+      <div id="weeklyReport"></div>
+    </div>
+  </section>
+
+  <section id="themes" class="screen">
+    <div class="card">
+      <h2>Theme Ideas</h2>
+      <p class="small">今日話すテーマ候補を無料でランダム提案します。AI APIは使いません。</p>
+      <div class="row">
+        <button id="suggestThemes" class="good">テーマを提案</button>
+        <button id="copyThemePrompt" class="secondary">ChatGPT用プロンプトをコピー</button>
+      </div>
+      <div id="themeIdeas" class="list"></div>
+      <div id="themePromptBox" class="out"></div>
+    </div>
+  </section>
+
+  <section id="search" class="screen">
+    <div class="card">
+      <h2>Search & Tags</h2>
+      <p class="small">保存箱の英文・日本語訳を検索し，タグを付けて整理します。タグはDashboard側だけに保存します。</p>
+
+      <div class="row">
+        <input id="archiveSearch" placeholder="検索：child, work, typhoon, 子ども など">
+        <button id="clearSearch" class="secondary">検索クリア</button>
+      </div>
+
+      <div class="tagBar" id="tagFilter"></div>
+      <div id="archiveSearchList"></div>
+    </div>
+  </section>
+
+  <section id="settings" class="screen">
+    <div class="card">
+      <h2>Settings / Backup</h2>
+      <p class="small">Dashboard専用データだけをエクスポート・インポートできます。既存アプリ本体のデータは変更しません。</p>
+      <div class="row">
+        <button id="exportDashboard" class="secondary">Dashboardデータを出力</button>
+        <button id="importDashboard" class="secondary">Dashboardデータを取り込み</button>
+      </div>
+      <textarea id="dashboardDataBox" placeholder="エクスポート結果，またはインポート用JSONをここに表示します。"></textarea>
+      <div id="settingsStatus" class="out"></div>
+    </div>
+
+    <div class="card">
+      <h2>読み取り状況</h2>
+      <div id="dataStatus" class="out"></div>
+    </div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
