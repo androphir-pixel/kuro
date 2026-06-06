@@ -189,3 +189,30 @@ textarea{min-height:120px;resize:vertical}
   .row > *{width:100%}
   button{width:100%}
 }
+
+
+.searchTextGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+.searchTextBox{
+  background:#020617;
+  border:1px solid #334155;
+  border-radius:12px;
+  padding:10px;
+  white-space:pre-wrap;
+  line-height:1.6;
+  max-height:260px;
+  overflow:auto;
+}
+.searchTextBox b{
+  display:block;
+  color:#93c5fd;
+  margin-bottom:6px;
+}
+@media(max-width:760px){
+  .searchTextGrid{grid-template-columns:1fr}
+  .searchTextBox{max-height:360px}
+}

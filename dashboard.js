@@ -257,18 +257,39 @@ function renderSearch(){
   if(q)list=list.filter(x=>((x.title||"")+" "+(x.script||"")+" "+(x.translation||"")+" "+tagsOf(x.id).join(" ")).toLowerCase().includes(q));
   if(selected.length)list=list.filter(x=>selected.every(t=>tagsOf(x.id).includes(t)));
 
-  if(!list.length){html("archiveSearchList",'<div class="out">保存済みスクリプトが見つかりません。</div>');return}
+  if(!list.length){
+    html("archiveSearchList",'<div class="out">保存済みスクリプトが見つかりません。</div>');
+    return;
+  }
+
   html("archiveSearchList",list.map(item=>{
     const tg=tagsOf(item.id);
     return `<div class="item">
-      <div class="itemHead"><div><div class="title">${esc(item.title||"Untitled")}</div><div class="date">${esc(displayDate(item.date))}</div></div></div>
-      <div class="preview">${esc((item.script||"").replace(/\s+/g," ").slice(0,140))}</div>
+      <div class="itemHead">
+        <div>
+          <div class="title">${esc(item.title||"Untitled")}</div>
+          <div class="date">${esc(displayDate(item.date))}</div>
+        </div>
+      </div>
+
+      <div class="searchTextGrid">
+        <div class="searchTextBox">
+          <b>English Script</b>
+          ${esc(item.script||"")}
+        </div>
+        <div class="searchTextBox">
+          <b>Japanese Translation</b>
+          ${esc(item.translation||"")}
+        </div>
+      </div>
+
       <div class="tagBar">${tg.map(t=>`<span class="tag">#${esc(t)}</span>`).join("")}</div>
       <label>タグ編集（カンマ区切り）</label>
       <input class="tagInput" data-id="${esc(item.id)}" value="${esc(tg.join(", "))}">
       <div class="row"><button class="secondary saveTags" data-id="${esc(item.id)}">タグ保存</button></div>
     </div>`;
   }).join(""));
+
   document.querySelectorAll(".saveTags").forEach(btn=>{
     btn.addEventListener("click",()=>{
       const input=document.querySelector('.tagInput[data-id="'+btn.dataset.id+'"]');
